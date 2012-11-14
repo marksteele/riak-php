@@ -36,10 +36,9 @@ Refactored by Mark Steele (mark@control-alt-del.org) to use a protocol buffer in
 
 
 class Riak_Client {
-
   private $_transport;
-  private $_r;
-  private $_w;
+  private $_r = 2;
+  private $_w = 2;
   private $_dw;
 
   public function __construct(Riak_Transport_Interface $transport) 
@@ -50,17 +49,17 @@ class Riak_Client {
     $this->_dw = 2;
   }
 
-  protected function _getTransport()
+  public function getTransport()
   {
     return $this->_transport;
   }
 
   /**
-   * Get the R-value setting for this RiakClient. (default 2)
+   * Get the R-value setting for this Riak_Client. (default 2)
    * @return integer
    */
-  function getR() { 
-    return $this->r; 
+  public function getR() { 
+    return $this->_r; 
   }
 
   /**
@@ -71,8 +70,8 @@ class Riak_Client {
    * @param integer $r - The R value.
    * @return $this
    */
-  function setR($r) { 
-    $this->r = $r; 
+  public function setR($r) { 
+    $this->_r = $r; 
     return $this; 
   }
 
@@ -80,8 +79,8 @@ class Riak_Client {
    * Get the W-value setting for this RiakClient. (default 2)
    * @return integer
    */
-  function getW() { 
-    return $this->w; 
+   public function getW() { 
+    return $this->_w; 
   }
 
   /**
@@ -90,8 +89,8 @@ class Riak_Client {
    * @param integer $w - The W value.
    * @return $this
    */
-  function setW($w) { 
-    $this->w = $w; 
+   public function setW($w) { 
+    $this->_w = $w; 
     return $this; 
   }
 
@@ -99,8 +98,8 @@ class Riak_Client {
    * Get the DW-value for this ClientOBject. (default 2)
    * @return integer
    */
-  function getDW() { 
-    return $this->dw; 
+   public function getDW() { 
+    return $this->_dw; 
   }
 
   /**
@@ -109,8 +108,8 @@ class Riak_Client {
    * @param  integer $dw - The DW value.
    * @return $this
    */
-  function setDW($dw) { 
-    $this->dw = $dw; 
+   public function setDW($dw) { 
+    $this->_dw = $dw; 
     return $this; 
   }
 
@@ -119,88 +118,35 @@ class Riak_Client {
    * this will always return a RiakBucket.
    * @return RiakBucket
    */
-  function bucket($name) {
-    return new RiakBucket($this, $name);
+   public function getBucket($name) {
+    return new Riak_Bucket($this, $name);
   }
 
   /**
    * Get all buckets.
    * @return array() of RiakBucket objects
    */
-  function buckets() {
-    $url = RiakUtils::buildRestPath($this);
-    $response = RiakUtils::httpRequest('GET', $url.'?buckets=true');
-    $response_obj = json_decode($response[1]);
-    $buckets = array();
-    foreach($response_obj->buckets as $name) {
-        $buckets[] = $this->bucket($name);
-    }
-    return $buckets;
+   public function listBuckets() {
+     return $this->getTransport()->listBuckets();
   }
 
   /**
    * Check if the Riak server for this RiakClient is alive.
    * @return boolean
    */
-  function isAlive() {
-    return $this->_getTransport()->ping();
+  public function isAlive() {
+    return $this->getTransport()->ping();
   }
 
 
-  # MAP/REDUCE/LINK FUNCTIONS
-
-  /**
-   * Start assembling a Map/Reduce operation.
-   * @see RiakMapReduce::add()
-   * @return RiakMapReduce
-   */
-  function add($params) {
-    $mr = new RiakMapReduce($this);
-    $args = func_get_args();
-    return call_user_func_array(array(&$mr, "add"), $args);
+  public function setBucketProperties($name, array $props) 
+  {
+    return $this->getTransport()->setBucketProperties($name, $props);
   }
 
-  /**
-   * Start assembling a Map/Reduce operation. This command will 
-   * return an error unless executed against a Riak Search cluster.
-   * @see RiakMapReduce::search()
-   * @return RiakMapReduce
-   */
-  function search($params) {
-    $mr = new RiakMapReduce($this);
-    $args = func_get_args();
-    return call_user_func_array(array(&$mr, "search"), $args);
+  public function getBucketProperties($name)
+  {
+    return $this->getTransport()->getBucketProperties($name);    
   }
 
-  /**
-   * Start assembling a Map/Reduce operation.
-   * @see RiakMapReduce::link()
-   */
-  function link($params) {
-    $mr = new RiakMapReduce($this);
-    $args = func_get_args();
-    return call_user_func_array(array(&$mr, "link"), $args);
-  }
-
-  /**
-   * Start assembling a Map/Reduce operation.
-   * @see RiakMapReduce::map()
-   */
-  function map($params) {
-    $mr = new RiakMapReduce($this);
-    $args = func_get_args();
-    return call_user_func_array(array(&$mr, "map"), $args);
-  }
-
-  /**
-   * Start assembling a Map/Reduce operation.
-   * @see RiakMapReduce::reduce()
-   */
-  function reduce($params) {
-    $mr = new RiakMapReduce($this);
-    $args = func_get_args();
-    return call_user_func_array(array(&$mr, "reduce"), $args);
-  }
 }
-
-

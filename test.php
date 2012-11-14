@@ -14,6 +14,7 @@ Protobuf::autoload();
 // Could do autoloader, but I'm lazy!
 // See how pretty with the files nice and split up?
 require_once('Riak/Client.php');
+require_once('Riak/Bucket.php');
 require_once('Riak/Transport/Interface.php');
 require_once('Riak/Transport/Pb.php');
 require_once('Riak/Transport/Exception.php');
@@ -22,9 +23,7 @@ Protobuf::setDefaultCodec($codec);
 require_once('Riak/Transport/Pb/riakclient.proto.php');
 $client = new Riak_Client(new Riak_Transport_Pb('127.0.0.1', '8087')); 
 echo var_dump($client->isAlive());
-
-//$bucket = $client->getBucket('blargh');
-//$obj = $bucket->get('asdf');
-//$obj->setData('blargh' . time())->store();
-//$obj->reload();
-//var_dump($obj->getData());
+$bucket = $client->getBucket('blargh');
+var_dump($bucket->setProperty('allow_mult',true));
+var_dump($bucket->getProperty('allow_mult'));
+var_dump($client->listBuckets()); // Doesn't appear to work as of yet... I'm probably doing something wrong...

@@ -53,7 +53,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 self::MSG_CODE_PUT_RESP => 'RpbPutResp',
                 self::MSG_CODE_DEL_REQ => 'RpbDelReq',
                 self::MSG_CODE_DEL_RESP => 'RpbDelResp',
-                self::MSG_CODE_LIST_BUCKETS_REQ => 'RpbListKeysReq',
+                self::MSG_CODE_LIST_BUCKETS_REQ => 'RpbListBucketsReq',
                 self::MSG_CODE_LIST_BUCKETS_RESP => 'RpbListBucketsResp',
                 self::MSG_CODE_LIST_KEYS_REQ => 'RpbListKeysReq',
                 self::MSG_CODE_LIST_KEYS_RESP => 'RpbListKeysResp',
@@ -120,7 +120,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                     }
                 }
         }
- /**
+	/**
          * Send a code on the socket. 
          * @param unknown_type $msgCode
          * @return unknown_type
@@ -130,7 +130,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 $packed = pack("NC", 1, $msgCode);
                 $this->_sendData($packed);
         }
-/**
+	/**
          * Receive a packet (header+pb message)
          * @return string
          */
@@ -168,7 +168,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 }
                 return $message; // First character is message code...
         }
- /**
+ 	/**
          * Massage packet into a protocol buffer message and message code
          * @return array An array with message code and pb object
          */
@@ -202,9 +202,9 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 }
                 return array($messageCode, $obj);
         }
- /**
+	/**
          * Encode a protocol buffer message and message code into a 
-     * wire format message
+     	 * wire format message
          * @param mixed $obj Protocol buffer object
          * @param int $messageCode
          * @return string
@@ -214,7 +214,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 $message = Protobuf::encode($obj);
                 return pack("NC", 1 + strlen($message), $messageCode) . $message;
         }
-/**
+	/**
          * Decode content of a message
          * @param mixed $content
          * @return array An array of metadata, and the message content
@@ -271,7 +271,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 }
                 return array($metadata, $content->getValue());
         }
-/**
+	/**
          * Encode a message for protocol buffers
          * @param array $metadata An array of metadata
          * @param string $data The data payload
@@ -318,23 +318,19 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
          * @return bool True on success
          */
         public function ping()
-         {
-                        $this->_sendCode(self::MSG_CODE_PING_REQ);
-                        list ($messageCode, $obj) = $this->_receiveMessage();
-                        if ($messageCode == self::MSG_CODE_PING_RESP) {
-                                return true;
-                        } else {
-                                if ($messageCode == self::MSG_CODE_ERROR_RESP) {
-                                        if ($response->hasErrmsg()) {
-                                                throw new Riak_Transport_Exception(
-                          sprintf("Protocol buffer error: $s" . $response->getErrmsg())
-                        );
-                                        }
+        {
+		$this->_sendCode(self::MSG_CODE_PING_REQ);
+                list ($messageCode, $obj) = $this->_receiveMessage();
+                if ($messageCode == self::MSG_CODE_PING_RESP) {
+                	return true;
+                } else {
+                	if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+                        	if ($response->hasErrmsg()) {
+                                	throw new Riak_Transport_Exception(sprintf("Protocol buffer error: $s" . $response->getErrmsg()));
                                 }
-                                throw new Riak_Transport_Exception(
-                  "Unexpected protocol buffer response code: " . $messageCode
-                );
-                        }
+                	}
+                	throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+        	}
         }
        /**
          * Retrieve an object
@@ -370,6 +366,84 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
                 	}
 		        throw new Riak_Transport_ProtocolBuffer_Exception("Unexpected protocol buffer response code: " . $messageCode);    
         	}
+	}
+       /**
+	 * Fetch list of buckets
+         * @return array An array that contains the list of buckets
+         */
+        public function listBuckets()
+        {
+                $this->_sendCode(self::MSG_CODE_LIST_BUCKETS_REQ);
+                list ($messageCode, $response) = $this->_receiveMessage();
+                if ($messageCode == self::MSG_CODE_LIST_BUCKETS_RESP) {
+                        if (!$response->hasBuckets()) {
+
+                        	return array();
+			} else {
+				return $response->getBucketsList();
+                        }
+                } else {
+                        if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+                            if ($response->hasErrmsg()) {
+                                throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+                            }
+                	}
+		        throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);    
+        	}
+	}
+
+        public function setBucketProperties($name, array $props)
+        {
+	   $properties = new RpbBucketProps();
+           if (isset($props['allow_mult'])) {
+		$properties->setAllowMult($props['allow_mult']);
+	   }
+           if (isset($props['n_val'])) {
+		$properties->setNVal($props['n_val']);
+           }
+           $req = new $this->_classMap[self::MSG_CODE_SET_BUCKET_REQ]();
+           $req->setBucket($name);
+           $req->setProps($properties);	   
+           $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_SET_BUCKET_REQ));
+           list ($messageCode, $response) = $this->_receiveMessage();
+           if ($messageCode == self::MSG_CODE_SET_BUCKET_RESP) {
+             return true;
+           } else {
+             if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+               if ($response->hasErrmsg()) {
+                 throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+               }
+             }
+             throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+           }
+	}
+
+        public function getBucketProperties($name)
+        {
+           $req = new $this->_classMap[self::MSG_CODE_GET_BUCKET_REQ]();
+           $req->setBucket($name);
+           $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_BUCKET_REQ));
+           list ($messageCode, $response) = $this->_receiveMessage();
+           if ($messageCode == self::MSG_CODE_GET_BUCKET_RESP) {
+             $data = array();
+             if ($response->hasProps()) {
+               $props = $response->getProps();               
+               if ($props->hasNVal()) {
+                 $data['n_val'] = $props->getNVal();
+               }
+               if ($props->hasAllowMult()) {
+                 $data['allow_mult'] = $props->getAllowMult();
+               }
+             }
+             return $data;
+           } else {
+             if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+               if ($response->hasErrmsg()) {
+                 throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+               }
+             }
+             throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+           }
 	}
 
 }
