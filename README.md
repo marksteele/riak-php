@@ -22,7 +22,7 @@ Installation
 
 Install protobuf-beta php module
 
-pear channel-discover pear.pollinimini.net
-pear install drslump/Protobuf-beta
+     pear channel-discover pear.pollinimini.net
+     pear install drslump/Protobuf-beta
 
 Clone this repo, have a look at test.php for sample usage.
