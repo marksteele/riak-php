@@ -37,16 +37,14 @@ Refactored by Mark Steele (mark@control-alt-del.org) to use a protocol buffer in
 
 class Riak_Client {
   private $_transport;
-  private $_r = 2;
-  private $_w = 2;
+  private $_r;
+  private $_w;
   private $_dw;
+  private $_pw;
 
   public function __construct(Riak_Transport_Interface $transport) 
   {
     $this->_transport = $transport;
-    $this->_r = 2;
-    $this->_w = 2;
-    $this->_dw = 2;
   }
 
   public function getTransport()
@@ -101,6 +99,9 @@ class Riak_Client {
    public function getDW() { 
     return $this->_dw; 
   }
+   public function getPW() { 
+    return $this->_pw; 
+  }
 
   /**
    * Set the DW-value for this RiakClient. See setR(...) for a
@@ -110,6 +111,11 @@ class Riak_Client {
    */
    public function setDW($dw) { 
     $this->_dw = $dw; 
+    return $this; 
+  }
+
+   public function setPW($pw) { 
+    $this->_pw = $pw; 
     return $this; 
   }
 
@@ -147,6 +153,11 @@ class Riak_Client {
   public function getBucketProperties($name)
   {
     return $this->getTransport()->getBucketProperties($name);    
+  }
+
+  public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = null, $returnHead = null, $ifNotModified = null, $ifNoneMatch = null) 
+  {
+    return $this->getTransport()->store($obj, $w, $dw, $pw, $returnBody, $returnHead, $ifNotModified, $ifNoneMatch);
   }
 
 }

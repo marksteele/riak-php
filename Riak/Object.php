@@ -100,7 +100,7 @@ class Riak_Object
   public function setCharset($charset)
   {
     $this->_charset = $charset;
-    return $this
+    return $this; 
   }
 
   public function getVtag()
@@ -111,13 +111,13 @@ class Riak_Object
   public function setVtag($vtag)
   {
     $this->_vtag = $vtag;
-    return $this
+    return $this;
   }
 
   public function getMeta($metaName) 
   {
     $metaName = strtolower($metaName);
-    return isset($this->meta[$metaName]) ? $this->meta[$metaName] : null;
+    return isset($this->_meta[$metaName]) ? $this->_meta[$metaName] : null;
   }
   
   public function setMeta($metaName, $value) 
@@ -134,7 +134,7 @@ class Riak_Object
   
   public function getAllMeta() 
   {
-    return $this->meta;
+    return $this->_meta;
   }
   
   public function removeAllMeta() 

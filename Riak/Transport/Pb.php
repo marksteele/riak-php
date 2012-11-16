@@ -492,8 +492,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     if ($obj->getVtag()) {
       $content->setVtag($obj->getVtag());
     }
-    
-    if (!empty($obj->getAllMeta())) {
+    if ($obj->getAllMeta()) {
       foreach ($obj->getAllMeta() as $k => $v) {
         $pair = new RpbPair();
         $pair->setKey($k);
@@ -529,8 +528,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     }
   }
 
-
-  private function _populate(Riak_Object, array $content) 
-  {
-  }
+//  private function _populate(Riak_Object, array $content) 
+//  {
+//  }
 }

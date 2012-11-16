@@ -29,6 +29,7 @@ class Riak_Bucket {
   private $_r;
   private $_w;
   private $_dw;
+  private $_pw;
 
   public function __construct($client, $name) {
     $this->_client = $client;
@@ -94,9 +95,14 @@ class Riak_Bucket {
    * the DW-value for the client.
    * @return integer
    */
-   public function getDW()    
+  public function getDW()    
   { 
     return isset($this->_dw) ? $this->_dw : $this->getClient()->getDW();
+  }
+
+  public function getPW()    
+  { 
+    return isset($this->_pw) ? $this->_pw : $this->getClient()->getPW();
   }
 
   /**
@@ -106,6 +112,11 @@ class Riak_Bucket {
    */
    public function setDW($dw) { 
     $this->_dw = $dw; 
+    return $this;
+  }
+
+   public function setPW($pw) { 
+    $this->_pw = $pw; 
     return $this;
   }
 
