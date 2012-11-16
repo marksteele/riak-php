@@ -446,4 +446,91 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
            }
 	}
 
+
+  public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = null, $returnHead = null, $ifNotModified = null, $ifNoneMatch = null)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_PUT_REQ]();
+    $req->setBucket($obj->getBucket()->getName());
+    if ($obj->getKey()) { // else server generated
+      $req->setKey($obj->getKey()); 
+    }
+    if ($w) {
+      $req->setW($w);
+    }
+    if ($dw) {
+      $req->setDw($dw);
+    }
+    if ($pw) {
+      $req->setPw($pw);
+    }
+    if ($returnBody) {
+      $req->setReturnBody(true);
+    }
+    if ($returnHead) {
+      $req->setReturnHead(true);
+    }
+    if ($ifNotModified) {
+      $req->setIfNotModified(true);
+    }
+    if ($ifNoneMatch) {
+      $req->setIfNoneMatch(true);
+    }
+    if ($obj->getVClock()) {
+      $req->setVclock($obj->getVClock());
+    }
+    $content = new RpbContent();
+    $content->setValue($obj->getValue());
+    if ($obj->getContentType()) {
+      $content->setContentType($obj->getContentType());
+    }
+    if ($obj->getCharset()) {
+      $content->setCharset($obj->getCharset());
+    }
+    if ($obj->getContentEncoding()) {
+      $content->setContentEncoding($obj->getContentEncoding());
+    }
+    if ($obj->getVtag()) {
+      $content->setVtag($obj->getVtag());
+    }
+    
+    if (!empty($obj->getAllMeta())) {
+      foreach ($obj->getAllMeta() as $k => $v) {
+        $pair = new RpbPair();
+        $pair->setKey($k);
+        $pair->setValue($v);
+        $content->addUserMeta($pair);
+      }
+    }
+    
+    $req->setContent($content);
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_PUT_REQ));
+    list ($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_PUT_RESP) {
+      if ($response->hasVclock()) {
+        $obj->setVClock($response->getVclock());
+      }
+      if ($obj->getKey() && !$returnBody && !$returnHead) {
+        return true;
+      } elseif (!$obj->getKey() && !$returnBody && !$returnHead) {
+	$obj->setKey($response->getKey()); // We asked server to generate a key for us
+        return true;
+      } else {
+        // We have to build a new populated object.
+        $new = new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey());
+        $new->setVClock($response->getVclock());
+      }
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+    }
+  }
+
+
+  private function _populate(Riak_Object, array $content) 
+  {
+  }
 }
