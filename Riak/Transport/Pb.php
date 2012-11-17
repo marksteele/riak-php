@@ -581,7 +581,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     if ($pr) {
       $req->setPr($pr);
     }
-    $req->setHead(true);
+    $req->setHead($head);
     $req->setBasicQuorum($basic_quorum);
     $req->setNotfoundOk($notfound_ok);
     if ($if_modified) {
