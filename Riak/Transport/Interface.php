@@ -8,4 +8,5 @@ interface Riak_Transport_Interface
   public function setBucketProperties($name, array $properties);
   public function getBucketProperties($name);
   public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = null, $returnHead = null, $ifNotModified = null, $ifNoneMatch = null);
+  public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false);
 }

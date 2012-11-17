@@ -32,6 +32,14 @@ var_dump($bucket->getProperty('allow_mult'));
 
 $obj = new Riak_Object($client, $bucket, 'asdf');
 $obj->setValue('asd');
-var_dump($obj->store());
-
+var_dump($obj->store()->hasSiblings());
+$obj = new Riak_Object($client, $bucket, 'asdf');
+$obj->setValue('asdasdf');
+var_dump($obj->store(null,null,null,true)->hasSiblings()); // Should see siblings here...
+$obj->store();
+// Siblings should be gone!
+var_dump($obj->hasSiblings());
 var_dump($client->listBuckets()); // Doesn't appear to work as of yet... I'm probably doing something wrong...
+
+var_dump($bucket->get('baaaah')->exists());
+var_dump($bucket->get('asdf')->exists());

@@ -14,6 +14,7 @@ class Riak_Object
   private $_deleted = false;
   private $_charset;
   private $_vtag;
+  private $_key;
 
   public function __construct(Riak_Client $client, Riak_Bucket $bucket, $key=NULL) 
   {
@@ -21,6 +22,22 @@ class Riak_Object
     $this->_bucket = $bucket;
     $this->_key = $key;
     $this->_exists = FALSE;
+  }
+
+  public function clear()
+  {
+    $this->_meta = array();
+    $this->_siblings = array();
+    $this->_exists = false;
+    $this->_content_type = 'application/octet-stream';
+    $this->_content_encoding = null;
+    $this->_data = null;
+    $this->_vclock = null;
+    $this->_last_modified = null;
+    $this->_last_modified_usecs = null;
+    $this->_deleted = false;
+    $this->_charset = null;
+    $this->_vtag = null;
   }
 
   public function getBucket() 
@@ -47,6 +64,12 @@ class Riak_Object
   public function exists() 
   {
     return $this->_exists;
+  }
+
+  public function setExists($value)
+  {
+    $this->_exists = $value;
+    return $this;
   }
 
   public function getContentType() 
@@ -187,6 +210,11 @@ class Riak_Object
   public function setSiblings($siblings)
   {
     $this->_siblings = $siblings;
+  }
+
+  public function addSibling($sibling) 
+  {
+    $this->_siblings[] = $sibling;
   }
 
 }

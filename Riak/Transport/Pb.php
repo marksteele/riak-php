@@ -508,16 +508,24 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
       if ($response->hasVclock()) {
         $obj->setVClock($response->getVclock());
       }
-      if ($obj->getKey() && !$returnBody && !$returnHead) {
-        return true;
-      } elseif (!$obj->getKey() && !$returnBody && !$returnHead) {
+      if (!$obj->getKey()) {
 	$obj->setKey($response->getKey()); // We asked server to generate a key for us
-        return true;
-      } else {
-        // We have to build a new populated object.
-        $new = new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey());
-        $new->setVClock($response->getVclock());
       }
+      if ($response->hasContent()) {
+        // We have to build a new populated object.
+        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $response->getContent(0));
+        $obj->setVClock($response->getVclock());
+        $siblings = $response->getContentList();
+        array_shift($siblings);
+        if (!empty($siblings)) {
+          foreach ($siblings as $sibling) {
+            $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
+            $child->setVClock($response->getVclock());
+            $obj->addSibling($child);
+          }
+        }
+      }
+      return $obj;
     } else {
       if ($messageCode == self::MSG_CODE_ERROR_RESP) {
         if ($response->hasErrmsg()) {
@@ -528,7 +536,95 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     }
   }
 
-//  private function _populate(Riak_Object, array $content) 
-//  {
-//  }
+  private function _populate(Riak_Object $obj, RpbContent $content) 
+  {
+    $obj->clear();
+    $obj->setExists(true);
+    if ($content->hasContentType()) {
+      $obj->setContentType($content->getContentType());
+    }
+    if ($content->hasCharset()) {
+      $obj->setCharset($content->getCharset());
+    }
+    if ($content->hasContentEncoding()) {
+      $obj->setContentEncoding($content->getContentEncoding());
+    }
+    if ($content->hasVtag()) {
+      $obj->setVtag($content->getVtag());
+    }
+    if ($content->hasLastMod()) {
+      $obj->setLastModified($content->GetLastMod());
+    }
+    if ($content->hasLastModUsecs()) {
+      $obj->setLastModifiedUsecs($content->getLastModUsecs());
+    }
+    if ($content->hasUserMeta()) {
+      foreach ($content->getUserMetaList() as $rpbpair) {
+        $obj->setMeta($rpbpair->getKey(), $rpbpair->getValue());
+      }
+    }
+    if ($content->hasDeleted()) {
+      $obj->setDeleted($content->getDeleted());
+    }
+    $obj->setValue($content->getValue());
+    return $obj;
+  }
+
+  public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_GET_REQ]();
+    $req->setBucket($obj->getBucket()->getName());
+    $req->setKey($obj->getKey()); 
+    if ($r) {
+      $req->setR($w);
+    }
+    if ($pr) {
+      $req->setPr($pr);
+    }
+    $req->setHead(true);
+    $req->setBasicQuorum($basic_quorum);
+    $req->setNotfoundOk($notfound_ok);
+    if ($if_modified) {
+      $req->setIfModified($if_modified);
+    }
+    $req->setHead($head);
+    $req->setDeletedVclock($deleted_vclock);
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_REQ));
+    list($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_GET_RESP) {
+      if ($response->hasUnchanged()) {
+        return $response->getUnchanged();
+      }
+      if ($response->hasVclock()) {
+        $obj->setVClock($response->getVclock());
+      }
+      if ($response->hasContent()) {
+        // We have to build a new populated object.
+        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey()), $response->getContent(0));
+        $obj->setVClock($response->getVclock());
+        $siblings = $response->getContentList();
+        array_shift($siblings);
+        if (!empty($siblings)) {
+          foreach ($siblings as $sibling) {
+            $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
+            $child->setVClock($response->getVclock());
+            $obj->addSibling($child);
+          }
+        }
+      }
+      return $obj;
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+    }    
+  }
 }
