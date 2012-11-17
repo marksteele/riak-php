@@ -447,7 +447,7 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
 	}
 
 
-  public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = null, $returnHead = null, $ifNotModified = null, $ifNoneMatch = null)
+  public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = false, $returnHead = false, $ifNotModified = false, $ifNoneMatch = false)
   {
     $req = new $this->_classMap[self::MSG_CODE_PUT_REQ]();
     $req->setBucket($obj->getBucket()->getName());
@@ -463,18 +463,10 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     if ($pw) {
       $req->setPw($pw);
     }
-    if ($returnBody) {
-      $req->setReturnBody(true);
-    }
-    if ($returnHead) {
-      $req->setReturnHead(true);
-    }
-    if ($ifNotModified) {
-      $req->setIfNotModified(true);
-    }
-    if ($ifNoneMatch) {
-      $req->setIfNoneMatch(true);
-    }
+    $req->setReturnBody($returnBody);
+    $req->setReturnHead($returnHead);
+    $req->setIfNotModified($ifNotModified);
+    $req->setIfNoneMatch($ifNoneMatch);
     if ($obj->getVClock()) {
       $req->setVclock($obj->getVClock());
     }
