@@ -4,70 +4,68 @@ require_once('/usr/share/pear/DrSlump/Protobuf.php');
 use \DrSlump\Protobuf;
 Protobuf::autoload();
 
-class Riak_Transport_Pb implements Riak_Transport_Interface
+class Riak_Transport_Pb extends Riak_Transport
 {
-        /**#@+
-         * Class constants
-         */
-        const MSG_CODE_ERROR_RESP           =  0;
-        const MSG_CODE_PING_REQ             =  1; // 0 length response
-        const MSG_CODE_PING_RESP            =  2; // 0 length response
-        const MSG_CODE_GET_CLIENT_ID_REQ    =  3;
-        const MSG_CODE_GET_CLIENT_ID_RESP   =  4;
-        const MSG_CODE_SET_CLIENT_ID_REQ    =  5;
-        const MSG_CODE_SET_CLIENT_ID_RESP   =  6;
-        const MSG_CODE_GET_SERVER_INFO_REQ  =  7;
-        const MSG_CODE_GET_SERVER_INFO_RESP =  8;
-        const MSG_CODE_GET_REQ              =  9;
-        const MSG_CODE_GET_RESP             = 10;
-        const MSG_CODE_PUT_REQ              = 11;
-        const MSG_CODE_PUT_RESP             = 12;
-        const MSG_CODE_DEL_REQ              = 13;
-        const MSG_CODE_DEL_RESP             = 14;
-        const MSG_CODE_LIST_BUCKETS_REQ     = 15;
-        const MSG_CODE_LIST_BUCKETS_RESP    = 16;
-        const MSG_CODE_LIST_KEYS_REQ        = 17;
-        const MSG_CODE_LIST_KEYS_RESP       = 18;
-        const MSG_CODE_GET_BUCKET_REQ       = 19;
-        const MSG_CODE_GET_BUCKET_RESP      = 20;
-        const MSG_CODE_SET_BUCKET_REQ       = 21;
-        const MSG_CODE_SET_BUCKET_RESP      = 22;
-        const MSG_CODE_MAPRED_REQ           = 23;
-        const MSG_CODE_MAPRED_RESP          = 24;
-        /**#@-*/
-        /**
-         * Create a map of generated protocol buffer msg_codes to classes
-         * @var array
-         */
-        private $_classMap = array(
-                self::MSG_CODE_ERROR_RESP => 'RpbErrorResp',
-                self::MSG_CODE_GET_CLIENT_ID_REQ => 'RpbGetClientIdReq',
-                self::MSG_CODE_GET_CLIENT_ID_RESP => 'RpbGetClientIdResp',
-                self::MSG_CODE_SET_CLIENT_ID_REQ => 'RpbSetClientIdReq',
-                self::MSG_CODE_SET_CLIENT_ID_RESP => 'RpbSetClientIdResp',
-                self::MSG_CODE_GET_SERVER_INFO_REQ => 'RpbGetServerInfoReq',
-                self::MSG_CODE_GET_SERVER_INFO_RESP => 'RpbGetServerInfoResp',
-                self::MSG_CODE_GET_REQ => 'RpbGetReq',
-                self::MSG_CODE_GET_RESP => 'RpbGetResp',
-                self::MSG_CODE_PUT_REQ => 'RpbPutReq',
-                self::MSG_CODE_PUT_RESP => 'RpbPutResp',
-                self::MSG_CODE_DEL_REQ => 'RpbDelReq',
-                self::MSG_CODE_DEL_RESP => 'RpbDelResp',
-                self::MSG_CODE_LIST_BUCKETS_REQ => 'RpbListBucketsReq',
-                self::MSG_CODE_LIST_BUCKETS_RESP => 'RpbListBucketsResp',
-                self::MSG_CODE_LIST_KEYS_REQ => 'RpbListKeysReq',
-                self::MSG_CODE_LIST_KEYS_RESP => 'RpbListKeysResp',
-                self::MSG_CODE_GET_BUCKET_REQ => 'RpbGetBucketReq',
-                self::MSG_CODE_GET_BUCKET_RESP => 'RpbGetBucketResp',
-                self::MSG_CODE_SET_BUCKET_REQ => 'RpbSetBucketReq',
-                self::MSG_CODE_SET_BUCKET_RESP => 'RpbSetBucketResp',
-                self::MSG_CODE_MAPRED_REQ => 'RpbMapRedReq',
-                self::MSG_CODE_MAPRED_RESP => 'RpbMapRedResp',
-        );
+  const MSG_CODE_ERROR_RESP           =  0;
+  const MSG_CODE_PING_REQ             =  1; // 0 length response
+  const MSG_CODE_PING_RESP            =  2; // 0 length response
+  const MSG_CODE_GET_CLIENT_ID_REQ    =  3;
+  const MSG_CODE_GET_CLIENT_ID_RESP   =  4;
+  const MSG_CODE_SET_CLIENT_ID_REQ    =  5;
+  const MSG_CODE_SET_CLIENT_ID_RESP   =  6;
+  const MSG_CODE_GET_SERVER_INFO_REQ  =  7;
+  const MSG_CODE_GET_SERVER_INFO_RESP =  8;
+  const MSG_CODE_GET_REQ              =  9;
+  const MSG_CODE_GET_RESP             = 10;
+  const MSG_CODE_PUT_REQ              = 11;
+  const MSG_CODE_PUT_RESP             = 12;
+  const MSG_CODE_DEL_REQ              = 13;
+  const MSG_CODE_DEL_RESP             = 14;
+  const MSG_CODE_LIST_BUCKETS_REQ     = 15;
+  const MSG_CODE_LIST_BUCKETS_RESP    = 16;
+  const MSG_CODE_LIST_KEYS_REQ        = 17;
+  const MSG_CODE_LIST_KEYS_RESP       = 18;
+  const MSG_CODE_GET_BUCKET_REQ       = 19;
+  const MSG_CODE_GET_BUCKET_RESP      = 20;
+  const MSG_CODE_SET_BUCKET_REQ       = 21;
+  const MSG_CODE_SET_BUCKET_RESP      = 22;
+  const MSG_CODE_MAPRED_REQ           = 23;
+  const MSG_CODE_MAPRED_RESP          = 24;
+  const MSG_CODE_INDEX_REQ	      = 25;
+  const MSG_CODE_INDEX_RESP           = 26;
+  const MSG_CODE_SEARCH_QUERY_REQ     = 27;
+  const MSG_CODE_SEARCH_QUERY_RESP    = 28;
+
+  private $_classMap = array(
+    self::MSG_CODE_ERROR_RESP => 'RpbErrorResp',
+    self::MSG_CODE_GET_CLIENT_ID_REQ => 'RpbGetClientIdReq',
+    self::MSG_CODE_GET_CLIENT_ID_RESP => 'RpbGetClientIdResp',
+    self::MSG_CODE_SET_CLIENT_ID_REQ => 'RpbSetClientIdReq',
+    self::MSG_CODE_SET_CLIENT_ID_RESP => 'RpbSetClientIdResp',
+    self::MSG_CODE_GET_SERVER_INFO_REQ => 'RpbGetServerInfoReq',
+    self::MSG_CODE_GET_SERVER_INFO_RESP => 'RpbGetServerInfoResp',
+    self::MSG_CODE_GET_REQ => 'RpbGetReq',
+    self::MSG_CODE_GET_RESP => 'RpbGetResp',
+    self::MSG_CODE_PUT_REQ => 'RpbPutReq',
+    self::MSG_CODE_PUT_RESP => 'RpbPutResp',
+    self::MSG_CODE_DEL_REQ => 'RpbDelReq',
+    self::MSG_CODE_DEL_RESP => 'RpbDelResp',
+    self::MSG_CODE_LIST_BUCKETS_REQ => 'RpbListBucketsReq',
+    self::MSG_CODE_LIST_BUCKETS_RESP => 'RpbListBucketsResp',
+    self::MSG_CODE_LIST_KEYS_REQ => 'RpbListKeysReq',
+    self::MSG_CODE_LIST_KEYS_RESP => 'RpbListKeysResp',
+    self::MSG_CODE_GET_BUCKET_REQ => 'RpbGetBucketReq',
+    self::MSG_CODE_GET_BUCKET_RESP => 'RpbGetBucketResp',
+    self::MSG_CODE_SET_BUCKET_REQ => 'RpbSetBucketReq',
+    self::MSG_CODE_SET_BUCKET_RESP => 'RpbSetBucketResp',
+    self::MSG_CODE_MAPRED_REQ => 'RpbMapRedReq',
+    self::MSG_CODE_MAPRED_RESP => 'RpbMapRedResp',
+  );
 
   private $_socket;
   private $_port;
   private $_host;
+
   public function __construct($host='127.0.0.1', $port=8087) 
   {
     $this->_port = $port;
@@ -75,105 +73,105 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     return $this;
   }
 
+  public function setClientId($clientId)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_SET_CLIENT_ID_REQ]();
+    $req->setClientId($clientId);
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_SET_CLIENT_ID_REQ));
+    list ($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_SET_CLIENT_ID_RESP) {
+      return true;
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception(sprintf("Protocol buffer error: $s" . $response->getErrmsg()));
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+    }   
+  }
 
-        /**
-         * Return the client connection
-         * @param bool $force
-         * @return resource
-         */
-        protected function _getConnection($force = null)
-        {
-                if ($force || !is_resource($this->_socket)) {
-                        $errno = null;
-                        $errstr = null;
-                        $this->_socket = stream_socket_client(
-              'tcp://' . $this->_host . ':' . $this->_port, 
-              $errno, 
-              $errstr, 
-              30
-            );
-                        stream_set_timeout($this->_socket, 86400);
-                        if (!is_resource($this->_socket)) {
-                                throw new Riak_Transport_Exception(
-                  'Error creating socket. 
-                  Error number :' . $errno . ' error string: '. $errstr
-                );
-                        }
-                }
-                return $this->_socket;
+  public function getServerVersion()
+  {
+    if (!$this->_serverVersion) {
+      $req = new $this->_classMap[self::MSG_CODE_GET_SERVER_INFO_REQ]();
+      $req->setClientId($clientId);
+      $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_SERVER_INFO_REQ));
+      list ($messageCode, $response) = $this->_receiveMessage();
+      if ($messageCode == self::MSG_CODE_GET_SERVER_INFO_REQ) {
+        $this->_serverVersion = $response->getServerVersion();     
+      } else {
+        if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+          if ($response->hasErrmsg()) {
+            throw new Riak_Transport_Exception(sprintf("Protocol buffer error: $s" . $response->getErrmsg()));
+          }
         }
-        /**
-         * Sends a payload of data on the socket
-         * @param string $payload
-         * @return void
-         */
-        protected function _sendData($payload)
-        {
-                for ($written = 0; $written < strlen($payload); $written += $fwrite) {
-                    $fwrite = fwrite(
-            $this->_getConnection(), 
-            substr($payload, $written)
-          );
-                    if ($fwrite === false) {
-                        $this->_socket = null;
-                        throw new Riak_Transport_Exception('Error writing on socket');
-                    }
-                }
-        }
-	/**
-         * Send a code on the socket. 
-         * @param unknown_type $msgCode
-         * @return unknown_type
-         */
-        protected function _sendCode($msgCode)
-        {
-                $packed = pack("NC", 1, $msgCode);
-                $this->_sendData($packed);
-        }
-	/**
-         * Receive a packet (header+pb message)
-         * @return string
-         */
-        protected function _receivePacket()
-        {
-                $message = '';
-                $header = fread($this->_getConnection(), 4);
-                if ($header === false) {
-                        // Read error?
-                        $metadata = stream_get_meta_data($this->_getConnection());
-                        if ($metadata['timed_out']) {
-                                throw new Riak_Transport_Exception(
-                  'Read timeout on socket'
-                );
-                        }
-                        throw new Riak_Transport_Exception('Read error on socket' );
-                }
-                if (strlen($header) !== 4) {
-                        throw new Riak_Transport_Exception(
-              'Short read on header, read ' . strlen($header) . ' bytes'
-            );
-                }
+        throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+      }   
+    }
+    return $this->_serverVersion;
+  }
 
-                list($length) = array_values(unpack("N", $header));
-                while (strlen($message) !== $length) {
-                        $buffer = fread(
-              $this->_getConnection(), 
-              min(8192, $length - strlen($message))
-            );
-                        if (!strlen($buffer) || $buffer === false) {
-                                $this->_socket = null;
-                                throw new Riak_Transport_Exception('Error reading on socket');
-                        }
-                        $message .= $buffer;
-                }
-                return $message; // First character is message code...
-        }
- 	/**
-         * Massage packet into a protocol buffer message and message code
-         * @return array An array with message code and pb object
-         */
-        protected function _receiveMessage()
-        {
+  protected function _getConnection($force = null)
+  {
+    if ($force || !is_resource($this->_socket)) {
+      $errno = null;
+      $errstr = null;
+      $this->_socket = stream_socket_client('tcp://' . $this->_host . ':' . $this->_port, $errno, $errstr, 30);
+      stream_set_timeout($this->_socket, 86400);
+      if (!is_resource($this->_socket)) {
+        throw new Riak_Transport_Exception('Error creating socket. Error number :' . $errno . ' error string: '. $errstr);
+      }
+    }
+    return $this->_socket;
+  }
+
+  protected function _sendData($payload)
+  {
+    for ($written = 0; $written < strlen($payload); $written += $fwrite) {
+      $fwrite = fwrite($this->_getConnection(),substr($payload, $written));
+      if ($fwrite === false) {
+        $this->_socket = null;
+        throw new Riak_Transport_Exception('Error writing on socket');
+      }
+    }
+  }
+
+  protected function _sendCode($msgCode)
+  {
+    $packed = pack("NC", 1, $msgCode);
+    $this->_sendData($packed);
+  }
+
+  protected function _receivePacket()
+  {
+    $message = '';
+    $header = fread($this->_getConnection(), 4);
+    if ($header === false) {
+      // Read error?
+      $metadata = stream_get_meta_data($this->_getConnection());
+      if ($metadata['timed_out']) {
+        throw new Riak_Transport_Exception('Read timeout on socket');
+      }
+      throw new Riak_Transport_Exception('Read error on socket' );
+    }
+    if (strlen($header) !== 4) {
+      throw new Riak_Transport_Exception('Short read on header, read ' . strlen($header) . ' bytes');
+    }
+    list($length) = array_values(unpack("N", $header));
+    while (strlen($message) !== $length) {
+      $buffer = fread($this->_getConnection(), min(8192, $length - strlen($message)));
+      if (!strlen($buffer) || $buffer === false) {
+        $this->_socket = null;
+        throw new Riak_Transport_Exception('Error reading on socket');
+      }
+      $message .= $buffer;
+    }
+    return $message; // First character is message code...
+  }
+
+  protected function _receiveMessage()
+  {
                 $message = $this->_receivePacket();
                 list($messageCode) = array_values(unpack("C", $message{0}));
                 switch($messageCode) {
@@ -484,13 +482,11 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
     if ($obj->getVtag()) {
       $content->setVtag($obj->getVtag());
     }
-    if ($obj->getAllMeta()) {
-      foreach ($obj->getAllMeta() as $k => $v) {
-        $pair = new RpbPair();
-        $pair->setKey($k);
-        $pair->setValue($v);
-        $content->addUserMeta($pair);
-      }
+    foreach ($obj->getAllMeta() as $k => $v) {
+      $pair = new RpbPair();
+      $pair->setKey($k);
+      $pair->setValue($v);
+      $content->addUserMeta($pair);
     }
     
     $req->setContent($content);
@@ -504,11 +500,10 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
 	$obj->setKey($response->getKey()); // We asked server to generate a key for us
       }
       if ($response->hasContent()) {
-        // We have to build a new populated object.
-        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $response->getContent(0));
-        $obj->setVClock($response->getVclock());
         $siblings = $response->getContentList();
-        array_shift($siblings);
+        // We have to build a new populated object.
+        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), array_pop($siblings));
+        $obj->setVClock($response->getVclock());
         if (!empty($siblings)) {
           foreach ($siblings as $sibling) {
             $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
@@ -592,16 +587,14 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
       }
       if ($response->hasContent()) {
         // We have to build a new populated object.
-        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey()), $response->getContent(0));
+        $siblings = $response->getContentList();
+        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey()), array_pop($siblings));
         $obj->setVClock($response->getVclock());
         $siblings = $response->getContentList();
-        array_shift($siblings);
-        if (!empty($siblings)) {
-          foreach ($siblings as $sibling) {
-            $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
-            $child->setVClock($response->getVclock());
-            $obj->addSibling($child);
-          }
+        foreach ($siblings as $sibling) {
+          $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
+          $child->setVClock($response->getVclock());
+          $obj->addSibling($child);
         }
       }
       return $obj;
@@ -611,6 +604,26 @@ class Riak_Transport_Pb implements Riak_Transport_Interface
           throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
         }
       }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
+    }    
+  }
+
+  public function delete(Riak_Object $obj, $dw = null)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_DEL_REQ]();
+    $req->setBucket($obj->getBucket()->getName());
+    $req->setKey($obj->getKey()); 
+    if ($dw) {
+      $req->setDW($dw);
+    }
+    if ($obj->getVClock()) {
+      $req->setVclock($obj->getVClock());
+    }
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_DEL_REQ));
+    list($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_DEL_RESP) {
+      return true;
+    } else {
       if ($messageCode == self::MSG_CODE_ERROR_RESP) {
         if ($response->hasErrmsg()) {
           throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());

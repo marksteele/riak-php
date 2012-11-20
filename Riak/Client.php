@@ -23,10 +23,13 @@ class Riak_Client
   private $_dw;
   private $_pw;
   private $_pr;
+  private $_clientId;
 
   public function __construct(Riak_Transport_Interface $transport) 
   {
     $this->_transport = $transport;
+    $this->_clientId = 'phpclient' . mt_rand(1,1000) . mt_rand(1,1000);
+    $transport->setClientId($this->_clientId);
   }
 
   public function getTransport()
@@ -120,6 +123,11 @@ class Riak_Client
   public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false)
   {
     return $this->getTransport()->fetch($obj, $r, $pr, $basic_quorum, $notfound_ok, $if_modified, $head, $deleted_vclock); 
+  }
+
+  public function delete(Riak_Object $obj, $dw = null)
+  {
+    return $this->getTransport()->delete($obj, $dw);
   }
 
 }

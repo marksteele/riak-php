@@ -72,6 +72,16 @@ class Riak_Object
     return $this;
   }
 
+  public function getDeleted()
+  {
+    return $this->_deleted;
+  }
+  public function setDeleted($d)
+  {
+    $this->_deleted = $d;
+    return $this;
+  }
+
   public function getContentType() 
   {  
     return $this->_content_type; 
@@ -183,11 +193,6 @@ class Riak_Object
       );
   }
  
-  public function delete($dw=NULL) 
-  {
-    return $this->getBucket()->getClient()->delete($this->getKey(), $dw ? $dw : $this->getBucket()->getDW());
-  }
-
   public function getVClock() 
   {
     return $this->_vclock;
@@ -207,6 +212,10 @@ class Riak_Object
     return count($this->_siblings);
   }
 
+  public function getSiblings()
+  {
+    return $this->_siblings;
+  }
   public function setSiblings($siblings)
   {
     $this->_siblings = $siblings;
@@ -216,5 +225,15 @@ class Riak_Object
   {
     $this->_siblings[] = $sibling;
   }
+
+  public function delete($dw=NULL)
+  {
+    if ($this->getBucket()->getClient()->delete($this, $dw ? $dw : $this->getBucket()->getDW()) == true) {
+      $this->clear();
+      return true;
+    }
+    return false;
+  }
+
 
 }
