@@ -309,33 +309,6 @@ class Riak_Transport_Pb extends Riak_Transport
     }
   }
 
-  public function get(Riak_Object $riakObject, $r, $vtag = null)
-  {
-    $req = new $this->_classMap[self::MSG_CODE_GET_REQ]();
-    $req->setR($r);
-    $req->setBucket($riakObject->getBucket()->getName());
-    $req->setKey($riakObject->getKey());
-    if ($vtag) {
-      throw new Riak_Transport_Exception("Vtag not necessary for protocol buffer interface");
-    }
-    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_REQ));
-    list ($messageCode, $response) = $this->_receiveMessage();
-    if ($messageCode == self::MSG_CODE_GET_RESP) {
-      $contents = array();
-      foreach ($response->getContentList() as $content) {
-        $contents[] = $this->_decodeContent($content);
-      }
-      return array($response->getVclock(), $contents);
-    } else {
-      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
-        if ($response->hasErrmsg()) {
-          throw new Riak_Transport_ProtocolBuffer_Exception("Protocol buffer error: " . $response->getErrmsg());
-        }
-      }
-      throw new Riak_Transport_ProtocolBuffer_Exception("Unexpected protocol buffer response code: " . $messageCode);    
-    }
-  }
-
   public function listBuckets()
   {
     $this->_sendCode(self::MSG_CODE_LIST_BUCKETS_REQ);

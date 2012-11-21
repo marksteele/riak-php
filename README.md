@@ -6,16 +6,20 @@ PHP client library supporting protocol buffers
 Uses Drslump's PHP protocol buffer generator, so it's only PHP 5.3 at the moment. Feel free to improve the code, 
 I know it's ugly and don't have the time to make it much prettier :-)
 
-Work in progress. I should have the basic get/put/delete done soon as well as set/get bucket properties.
+Implemented
+ - get/set bucket properties (the ones supported by PB API anyways)
+ - key listing (streaming using iterator)
+ - store/fetch/delete objects
+ - getServerVersion
+ - setClientId
+ - list buckets
 
-The plan after that is to support features in the following order:
- - Key listing 
+TODO
  - Mapreduce 
  - 2i, search
+ - Test ;-)
 
-I'm going to shoot for handling result sets in a streaming fashion (for things like key list, mapred, etc...). 
-This means that it definitely won't be safe to interleave requests/responses on the same client connection.
-
+One of the main design goals is to be able to handle streaming content. So things that are likely to return large sets (mapred, 2i, listkeys) are going to be implemented as iterators.
 
 Installation
 ============
