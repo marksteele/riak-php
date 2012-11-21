@@ -11,4 +11,6 @@ interface Riak_Transport_Interface
   public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false);
   public function delete(Riak_Object $obj, $dw = null);
   public function getServerVersion();
+  public function listKeys(Riak_Bucket $bucket);
+  public function getNextKeyListStack();
 }

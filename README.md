@@ -7,6 +7,7 @@ Uses Drslump's PHP protocol buffer generator, so it's only PHP 5.3 at the moment
 I know it's ugly and don't have the time to make it much prettier :-)
 
 Implemented
+ - ping
  - get/set bucket properties (the ones supported by PB API anyways)
  - key listing (streaming using iterator)
  - store/fetch/delete objects
