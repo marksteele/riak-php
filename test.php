@@ -17,6 +17,7 @@ require_once('Riak/Client.php');
 require_once('Riak/Bucket.php');
 require_once('Riak/Object.php');
 require_once('Riak/Transport/Interface.php');
+require_once('Riak/Transport/KeyList.php');
 require_once('Riak/Transport.php');
 require_once('Riak/Transport/Pb.php');
 require_once('Riak/Transport/Exception.php');
@@ -24,27 +25,37 @@ $codec = new Protobuf\Codec\Binary();
 Protobuf::setDefaultCodec($codec);
 require_once('Riak/Transport/Pb/riakclient.proto.php');
 
-$client = new Riak_Client(new Riak_Transport_Pb('127.0.0.1', '8087')); 
-echo "Client alive?\n";
-var_dump($client->isAlive());
-$bucket = $client->getBucket('blargh');
-$bucket->setProperty('allow_mult',true);
-echo "Allow mult?\n";
-var_dump($bucket->getProperty('allow_mult'));
+$client1 = new Riak_Client(new Riak_Transport_Pb('127.0.0.1', '8087')); 
+$client2 = new Riak_Client(new Riak_Transport_Pb('127.0.0.1', '8087')); 
+echo "Clients alive?\n";
+var_dump($client1->isAlive());
+var_dump($client2->isAlive());
 
-echo "delete key?\n";
-var_dump($bucket->get('asdf')->delete());
+$bucket1 = $client1->getBucket('conflicts');
+$bucket2 = $client2->getBucket('conflicts');
+$bucket1->setProperty('allow_mult',true);
+echo "bucket allow_mult?\n";
+var_dump($bucket1->getProperty('allow_mult'));
 
-$obj = $bucket->get('asdf');
-echo "exists?\n";
-var_dump($obj->exists());
-echo "siblings?\n";
-var_dump($obj->hasSiblings());
+$bucket1->get('testkey')->setValue('test1')->store();
+$o = new Riak_Object($client2, $bucket2, 'testkey');
+$o->setValue('test2')->store(null,null,null,true);
+echo "Object should have returned body and noticed siblings...\n";
+var_dump($o->hasSiblings());
 
-$lwwbucket = $client->getBucket('lww');
-$lwwbucket->setProperty('allow_mult',false);
-$obj = $lwwbucket->get('asdf');
-$obj->setValue('lww1')->store(null,null,null,true);
-$obj->setValue('lww2')->store(null,null,null,true);
-echo "LWW siblings?\n";
-var_dump($obj->hasSiblings());
+$conflict = $bucket1->get('testkey');
+echo "Conflict has siblings?\n";
+var_dump($conflict->hasSiblings());
+foreach ($conflict->getSiblings() as $s) {
+  var_dump($s->getValue());
+}
+
+echo "Deleted?\n";
+var_dump($conflict->delete());
+echo "Still exists?\n";
+var_dump($bucket1->get('testkey')->exists());
+
+foreach ($bucket1->listKeys() as $k) {
+  echo $k . "\n";
+}
+// Note: deleted key still around! not_founds aren't filtered out... I think...

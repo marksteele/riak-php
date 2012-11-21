@@ -113,7 +113,7 @@ class Riak_Bucket {
 
   public function listKeys() 
   {
-    // Reimplement using iterator
+    return $this->getClient()->listKeys($this);
   }
   
   public function get($key, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false) 
