@@ -257,42 +257,6 @@ class Riak_Transport_Pb extends Riak_Transport
     return array($metadata, $content->getValue());
   }
 
-  protected function _protocolBufferEncodeContent($metadata, $data, &$req)
-  {
-    $content = $req->getContent();
-    foreach ($metadata as $k => $v) {
-      switch($k) {
-        case 'content-type':
-          $content->setContentType($v);
-          break;
-        case 'charset':
-          $content->setCharset($v);
-          break;
-        case 'content-encoding':
-          $content->setContentEncoding($v);
-          break;
-        case 'user-metadata':
-          foreach ($v as $uk => $uv) {
-            $pair = new RpbPair();
-            $pair->setKey($uk);
-            $pair->setValue($uv);
-            $content->addUserMeta($pair);
-          }
-          break;
-        case 'links':
-          foreach ($v as $link) {
-            $pbLink = new RpbLink();
-            $pbLink->setKey($link->getKey());
-            $pbLink->setTag($link->getTag());
-            $pbLink->setBucket($link->getBucket());
-            $content->addLinks($pbLink);
-          }
-          break;
-      }
-    }
-    $content->setValue($data);
-  }
-
   public function ping()
   {
     $this->_sendCode(self::MSG_CODE_PING_REQ);
@@ -426,6 +390,14 @@ class Riak_Transport_Pb extends Riak_Transport
       $pair->setValue($v);
       $content->addUserMeta($pair);
     }
+
+    foreach ($obj->getLinks() as $link) {
+      $link = new RpbLink();
+      $link->setBucket($link->getBucket());
+      $link->setKey($link->getKey());
+      $link->setTag($link->getTag());
+      $content->addLinks($link);
+    }
     
     $req->setContent($content);
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_PUT_REQ));
@@ -488,6 +460,11 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     if ($content->hasDeleted()) {
       $obj->setDeleted($content->getDeleted());
+    }
+    if ($content->hasLinks()) {
+      foreach ($content->getLinksList() as $link) {
+        $obj->addLink(new Riak_Link($link->getBucket(),$link->getKey(),$link->hasTag() ? $link->getTag() : null));
+      }
     }
     $obj->setValue($content->getValue());
     return $obj;

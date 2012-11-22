@@ -15,6 +15,7 @@ class Riak_Object
   private $_charset;
   private $_vtag;
   private $_key;
+  private $_links = array();
 
   public function __construct(Riak_Client $client, Riak_Bucket $bucket, $key=NULL) 
   {
@@ -38,6 +39,7 @@ class Riak_Object
     $this->_deleted = false;
     $this->_charset = null;
     $this->_vtag = null;
+    $this->_links = array();
   }
 
   public function getBucket() 
@@ -235,5 +237,40 @@ class Riak_Object
     return false;
   }
 
+  public function addLink($obj, $tag=NULL) 
+  {
+    if ($obj instanceof Riak_Link) {
+      $newlink = $obj;
+    } else {
+      $newlink = new Riak_Link($obj->getBucket()->getName(), $obj->getKey(), $tag);
+    }
+    $this->removeLink($newlink);
+    $this->_links[] = $newlink;
+    return $this;
+  }
+  
+  public function removeLink($obj, $tag=NULL) 
+  {
+    if ($obj instanceof Riak_Link) {
+      $oldlink = $obj;
+    } else {
+      $oldlink = new Riak_Link($obj->bucket->name, $obj->key, $tag);
+    }
+    $a = array();
+    foreach ($this->_links as $link) {
+      if (!$link->isEqual($oldlink)) 
+        $a[] = $link;
+    }
 
+    $this->_links = $a;
+    return $this;
+  }
+
+  public function getLinks() 
+  {
+    foreach ($this->_links as $link) {
+      $link->setClient($this->getBucket()->getClient());
+    }
+    return $this->_links;
+  }
 }

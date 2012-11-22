@@ -16,6 +16,7 @@ Protobuf::autoload();
 require_once('Riak/Client.php');
 require_once('Riak/Bucket.php');
 require_once('Riak/Object.php');
+require_once('Riak/Link.php');
 require_once('Riak/Transport/Interface.php');
 require_once('Riak/Transport/KeyList.php');
 require_once('Riak/Transport.php');
@@ -59,3 +60,12 @@ foreach ($bucket1->listKeys() as $k) {
   echo $k . "\n";
 }
 // Note: deleted key still around! not_founds aren't filtered out... I think...
+
+$obj1 = $client1->getBucket('testlinks')->get('source');
+$obj2 = $client1->getBucket('testlinks')->get('destination')->setValue('testdest')->store();
+
+$obj1->setValue('testlinks')->addLink($obj2)->store();
+$links = $client1->getBucket('testlinks')->get('source')->getLinks();
+foreach ($links as $link) {
+  var_dump($link->get()->getValue());
+}
