@@ -14,13 +14,15 @@ Implemented
  - getServerVersion
  - setClientId
  - list buckets
+ - Search (via protobuf interface) ... buffers all results in memory (sorry! that's how the API is conceived)
 
 TODO
- - Mapreduce 
- - 2i, search
+ - Mapreduce (and MapReduce searching)
+ - 2i
  - Test ;-)
 
-One of the main design goals is to be able to handle streaming content. So things that are likely to return large sets (mapred, 2i, listkeys) are going to be implemented as iterators.
+NOTES
+ - If using a streaming method (key list, eventually map reduce) you cannot interleave other requests to Riak. If you need to do this, open a new connection.
 
 Installation
 ============
@@ -31,3 +33,9 @@ Install protobuf-beta php module
      pear install drslump/Protobuf-beta
 
 Clone this repo, have a look at test.php for sample usage.
+
+For the curious, here's the command I used to generate the protobuf php code:
+
+      protoc-gen-php -o ./build -i ./ riak.proto
+
+The astute reader will notice I've merged together the various proto files which are part of riak_pb (https://github.com/basho/riak_pb.git)
