@@ -17,6 +17,7 @@ require_once('Riak/Client.php');
 require_once('Riak/Bucket.php');
 require_once('Riak/Object.php');
 require_once('Riak/Link.php');
+require_once('Riak/Search.php');
 require_once('Riak/Transport/Interface.php');
 require_once('Riak/Transport/KeyList.php');
 require_once('Riak/Transport.php');
@@ -59,13 +60,13 @@ var_dump($bucket1->get('testkey')->exists());
 foreach ($bucket1->listKeys() as $k) {
   echo $k . "\n";
 }
+echo "Key list done\n";
 // Note: deleted key still around! not_founds aren't filtered out... I think...
 
-$obj1 = $client1->getBucket('testlinks')->get('source');
-$obj2 = $client1->getBucket('testlinks')->get('destination')->setValue('testdest')->store();
-
-$obj1->setValue('testlinks')->addLink($obj2)->store();
-$links = $client1->getBucket('testlinks')->get('source')->getLinks();
-foreach ($links as $link) {
-  var_dump($link->get()->getValue());
+// Links
+$client1->getBucket('argle')->newObject('link1')->setValue(rand(1,1000))->addLink($client1->getBucket('argle')->newObject('test2'),'tagtest' . rand(1,1000))->store();
+foreach ($client1->getBucket('argle')->get('link1')->getLinks() as $link) {
+  echo $link->getBucket() . "\n";
+  echo $link->getKey() . "\n";
+  echo $link->getTag() . "\n";
 }

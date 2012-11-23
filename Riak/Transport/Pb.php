@@ -204,59 +204,6 @@ class Riak_Transport_Pb extends Riak_Transport
     return pack("NC", 1 + strlen($message), $messageCode) . $message;
   }
 
-  protected function _decodeContent($content)
-  {
-    $metadata = array();
-    $links = array();
-    $userMetadata = array();
-
-    // Handle metadata
-    if ($content->hasContentType()) {
-      $metadata['content-type'] = $content->getContentType();
-    }
-    if ($content->hasCharset()) {
-      $metadata['charset'] = $content->getCharset();
-    }
-    if ($content->hasContentEncoding()) {
-      $metadata['content-encoding'] = $content->getContentEncoding();
-    }
-    if ($content->hasVtag()) {
-      $metadata['vtag'] = $content->getVtag();
-    }
-
-    foreach ($content->getLinks() as $link) {
-      $bucket = null;
-      $key = null;
-      $tag = null;
-      if ($link->hasBucket()) {
-        $bucket = $link->getBucket();
-      }
-      if ($link->hasKey()) {
-        $key = $link->getKey();
-      }
-      if ($link->hasTag()) {
-        $tag = $link->getTag();
-      }
-      $links[] = new Riak_Link($bucket, $key, $tag);
-    }
-    if ($links) {
-      $metadata['links'] = $links;
-    }
-    if ($content->hasLastMod()) {
-      $metadata['last_mod'] = $content->getLastMod();
-    }
-    if ($content->hasLastModUsecs()) {
-      $metadata['last_mod_usecs'] = $content->getLastModUsecs();
-    }
-    foreach ($content->getUserMetaList() as $userMeta) {
-      $userMetadata[$userMeta->getKey()] = $userMeta->getValue();
-    }
-    if ($userMetadata) {
-      $metadata['user-metadata'] = $userMetadata;
-    }
-    return array($metadata, $content->getValue());
-  }
-
   public function ping()
   {
     $this->_sendCode(self::MSG_CODE_PING_REQ);
@@ -392,11 +339,13 @@ class Riak_Transport_Pb extends Riak_Transport
     }
 
     foreach ($obj->getLinks() as $link) {
-      $link = new RpbLink();
-      $link->setBucket($link->getBucket());
-      $link->setKey($link->getKey());
-      $link->setTag($link->getTag());
-      $content->addLinks($link);
+      $l = new RpbLink();
+      $l->setBucket($link->getBucket());
+      $l->setKey($link->getKey());
+      if ($link->getTag()) {
+        $l->setTag($link->getTag());
+      }
+      $content->addLinks($l);
     }
     
     $req->setContent($content);
@@ -463,11 +412,10 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     if ($content->hasLinks()) {
       foreach ($content->getLinksList() as $link) {
-        $obj->addLink(new Riak_Link($link->getBucket(),$link->getKey(),$link->hasTag() ? $link->getTag() : null));
+       $obj->addLink(new Riak_Link($link->getBucket(),$link->getKey(),$link->hasTag() ? $link->getTag() : null));
       }
     }
     $obj->setValue($content->getValue());
-    return $obj;
   }
 
   public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false)
@@ -501,10 +449,11 @@ class Riak_Transport_Pb extends Riak_Transport
       if ($response->hasContent()) {
         // We have to build a new populated object.
         $siblings = $response->getContentList();
-        $obj = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey()), array_pop($siblings));
+        $this->_populate($obj, array_pop($siblings));
         $obj->setVClock($response->getVclock());
         foreach ($siblings as $sibling) {
-          $child = $this->_populate(new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey() ? $obj->getKey() : $response->getKey()), $sibling);
+          $child = new Riak_Object($obj->getBucket()->getClient(), $obj->getBucket(), $obj->getKey());
+          $this->_populate($child, $sibling);
           $child->setVClock($response->getVclock());
           $obj->addSibling($child);
         }
@@ -573,4 +522,62 @@ class Riak_Transport_Pb extends Riak_Transport
     }
   }
 
+  public function search($query, $index, $rows = null, $start = null, $sort = null, $filter = null, $df = null, $op = null, $fl = array(), $presort = null)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_SEARCH_QUERY_REQ]();
+    $req->setQ($query);
+    $req->setIndex($index);
+    if ($rows) {
+      $req->setRows($rows);
+    }
+    if ($start) {
+      $req->setStart($start);
+    }
+    if ($sort) {
+      $req->setSort($sort);
+    }
+    if ($filter) {
+      $req->setFilter($filter);
+    }
+    if ($df) {
+      $req->setDf($df);
+    }
+    if ($op) {
+      $req->setOp($op);
+    }
+    if ($fl) {
+      foreach ($fl as $item) {
+        $req->addFl($item);
+      }
+    }
+    if ($presort) {
+      $req->setPresort($presort);
+    }
+    $this->_sendData($this->_encodeMessage($req, self:::MSG_CODE_SEARCH_QUERY_REQ));
+    list($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE__SEARCH_QUERY_RESP) {
+      $results = array();
+      if ($response->hasMaxScore()) {
+        $results['max_score'] = $response->getMaxScore();
+      }
+      if ($response->hasNumFound()) {
+        $results['num_found'] = $response->getNumFound();
+      }
+      if ($response->hasDocs()) {
+        foreach ($response->getDocsList() as $doc) {
+          foreach ($doc->getFieldsList() as $pair) {
+            $results['docs'][$pair->getKey()] = $pair->getValue();
+          }
+        }
+      }
+      return $results;
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
+    }
+  }
 }

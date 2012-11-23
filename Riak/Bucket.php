@@ -132,4 +132,9 @@ class Riak_Bucket {
         $deleted_vclock
     );
   }
+
+  public function newObject($key = null)
+  {
+    return new Riak_Object($this->getClient(), $this, $key);
+  }
 }

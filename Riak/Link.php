@@ -20,8 +20,7 @@ class Riak_Link {
 
   public function get($r=NULL) 
   {
-    $b = $this->_client->getBucket($this->_bucket);
-    return $b->get($this->_key, $r);
+    return $this->_client->getBucket($this->_bucket)->get($this->_key, $r);
   }
 
   public function getBucket() 
@@ -29,7 +28,7 @@ class Riak_Link {
     return $this->_bucket;
   }
 
-  public function setBucket($name) 
+  public function setBucket($bucket) 
   {
     $this->_bucket = $bucket;
     return $this;
@@ -47,11 +46,7 @@ class Riak_Link {
   }
 
   public function getTag() {
-    if ($this->_tag == null) {
-      return $this->bucket;
-    } else {
-      return $this->_tag;
-    }
+    return $this->_tag;
   }
 
   public function setTag($tag) {
@@ -59,7 +54,7 @@ class Riak_Link {
     return $this;
   }
 
-  public function isEqual($link) {
+  public function isEqual(Riak_Link $link) {
     return ($this->getBucket() == $link->getBucket()) && ($this->getKey() == $link->getKey()) && ($this->getTag() == $link->getTag());
   }
 }

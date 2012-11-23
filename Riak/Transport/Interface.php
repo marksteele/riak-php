@@ -12,4 +12,5 @@ interface Riak_Transport_Interface
   public function getServerVersion();
   public function listKeys(Riak_Bucket $bucket);
   public function getNextKeyListStack();
+  public function search($query, $index, $rows = null, $start = null, $sort = null, $filter = null, $df = null, $op = null, $fl = array(), $presort = null);
 }

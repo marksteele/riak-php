@@ -244,6 +244,7 @@ class Riak_Object
     } else {
       $newlink = new Riak_Link($obj->getBucket()->getName(), $obj->getKey(), $tag);
     }
+    $newlink->setClient($this->getBucket()->getClient());
     $this->removeLink($newlink);
     $this->_links[] = $newlink;
     return $this;
@@ -254,7 +255,7 @@ class Riak_Object
     if ($obj instanceof Riak_Link) {
       $oldlink = $obj;
     } else {
-      $oldlink = new Riak_Link($obj->bucket->name, $obj->key, $tag);
+      $oldlink = new Riak_Link($obj->getBucket()->getName(), $obj->getKey(), $tag);
     }
     $a = array();
     foreach ($this->_links as $link) {
@@ -268,9 +269,6 @@ class Riak_Object
 
   public function getLinks() 
   {
-    foreach ($this->_links as $link) {
-      $link->setClient($this->getBucket()->getClient());
-    }
     return $this->_links;
   }
 }
