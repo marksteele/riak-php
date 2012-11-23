@@ -555,7 +555,7 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_SEARCH_QUERY_REQ));
     list($messageCode, $response) = $this->_receiveMessage();
-    if ($messageCode == self::MSG_CODE__SEARCH_QUERY_RESP) {
+    if ($messageCode == self::MSG_CODE_SEARCH_QUERY_RESP) {
       $results = array();
       if ($response->hasMaxScore()) {
         $results['max_score'] = $response->getMaxScore();
