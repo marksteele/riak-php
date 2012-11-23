@@ -60,6 +60,10 @@ class Riak_Transport_Pb extends Riak_Transport
     self::MSG_CODE_SET_BUCKET_RESP => 'RpbSetBucketResp',
     self::MSG_CODE_MAPRED_REQ => 'RpbMapRedReq',
     self::MSG_CODE_MAPRED_RESP => 'RpbMapRedResp',
+    self::MSG_CODE_INDEX_REQ => 'RpbIndexReq',
+    self::MSG_CODE_INDEX_RESP => 'RpbIndexResp',
+    self::MSG_CODE_SEARCH_QUERY_REQ => 'RpbSearchQueryReq',
+    self::MSG_CODE_SEARCH_QUERY_RESP => 'RpbSearchQueryResp',
   );
 
   private $_socket;
