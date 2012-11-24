@@ -13,8 +13,9 @@ class Riak_Client
   public function __construct(Riak_Transport_Interface $transport) 
   {
     $this->_transport = $transport;
-    $this->_clientId = 'phpclient' . mt_rand(1,1000) . mt_rand(1,1000);
+    $this->_clientId = md5('phpclient' . mt_rand(1,1000) . mt_rand(1,1000) . time());
     $transport->setClientId($this->_clientId);
+    $transport->getServerVersion();
   }
 
   public function getTransport()
@@ -110,9 +111,9 @@ class Riak_Client
     return $this->getTransport()->fetch($obj, $r, $pr, $basic_quorum, $notfound_ok, $if_modified, $head, $deleted_vclock); 
   }
 
-  public function delete(Riak_Object $obj, $dw = null)
+  public function delete(Riak_Object $obj, $rw = null, $r = null, $w = null, $pr = null, $pw = null, $dw = null)
   {
-    return $this->getTransport()->delete($obj, $dw);
+    return $this->getTransport()->delete($obj, $rw, $r, $w, $pr, $pw, $dw);
   }
 
   public function listKeys(Riak_Bucket $bucket)
@@ -125,4 +126,9 @@ class Riak_Client
     return $this->getTransport()->mapReduce($request, $contentType);
   }
   
+  public function getServerVersion()
+  {
+    return $this->getTransport()->getServerVersion();
+  }
+
 }

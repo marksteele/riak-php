@@ -66,6 +66,8 @@ class Riak_Transport_Pb extends Riak_Transport
     self::MSG_CODE_SEARCH_QUERY_RESP => 'RpbSearchQueryResp',
   );
 
+  private $_quorumNames = array('default' => 4294967291,'all' => 4294967292,'quorum' => 4294967293,'one' => 4294967294);
+
   private $_socket;
   private $_port;
   private $_host;
@@ -77,6 +79,11 @@ class Riak_Transport_Pb extends Riak_Transport
     return $this;
   }
 
+  public static function translateQuorum($item)
+  {
+    return isset($this->_quorumNames[$item]) ? $this->_quorumNames[$item] : $item;
+  }
+ 
   public function setClientId($clientId)
   {
     $req = new $this->_classMap[self::MSG_CODE_SET_CLIENT_ID_REQ]();
@@ -98,12 +105,10 @@ class Riak_Transport_Pb extends Riak_Transport
   public function getServerVersion()
   {
     if (!$this->_serverVersion) {
-      $req = new $this->_classMap[self::MSG_CODE_GET_SERVER_INFO_REQ]();
-      $req->setClientId($clientId);
-      $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_SERVER_INFO_REQ));
+      $this->_sendCode(self::MSG_CODE_GET_SERVER_INFO_REQ);
       list ($messageCode, $response) = $this->_receiveMessage();
-      if ($messageCode == self::MSG_CODE_GET_SERVER_INFO_REQ) {
-        $this->_serverVersion = $response->getServerVersion();     
+      if ($messageCode == self::MSG_CODE_GET_SERVER_INFO_RESP) {
+        $this->_serverVersion = $response->getServerVersion();
       } else {
         if ($messageCode == self::MSG_CODE_ERROR_RESP) {
           if ($response->hasErrmsg()) {
@@ -309,16 +314,24 @@ class Riak_Transport_Pb extends Riak_Transport
       $req->setKey($obj->getKey()); 
     }
     if ($w) {
-      $req->setW($w);
+      $req->setW(self::translateQuorumNames($w));
     }
     if ($dw) {
-      $req->setDw($dw);
+      $req->setDw(self::translateQuorumNames($dw));
     }
-    if ($pw) {
-      $req->setPw($pw);
+    if ($pw && $this->hasQuorumControls()) {
+      $req->setPw(self::translateQuorumNames($pw));
     }
+    
     $req->setReturnBody($returnBody);
+
+    if ($returnHead && !$this->hasPbHead()) {
+      throw new Riak_Transport_Exception("Head not supported on this version of Riak: " . $this->getServerVersion());
+    }
     $req->setReturnHead($returnHead);
+    if (($ifNotModified || $ifNoneMatch) && !$this->hasPbConditionals()) {
+      throw new Riak_Transport_Exception("Conditional store not supported on this version of Riak: " . $this->getServerVersion());
+    }
     $req->setIfNotModified($ifNotModified);
     $req->setIfNoneMatch($ifNoneMatch);
     if ($obj->getVClock()) {
@@ -438,10 +451,10 @@ class Riak_Transport_Pb extends Riak_Transport
     $req->setBucket($obj->getBucket()->getName());
     $req->setKey($obj->getKey()); 
     if ($r) {
-      $req->setR($w);
+      $req->setR(self::translateQuorumNames($r));
     }
-    if ($pr) {
-      $req->setPr($pr);
+    if ($this->hasQuorumControls() && $pr) {
+      $req->setPr(self::translateQuorumNames($pr));
     }
     $req->setHead($head);
     $req->setBasicQuorum($basic_quorum);
@@ -450,7 +463,9 @@ class Riak_Transport_Pb extends Riak_Transport
       $req->setIfModified($if_modified);
     }
     $req->setHead($head);
-    $req->setDeletedVclock($deleted_vclock);
+    if ($this->hasTombstoneVclocks()) {
+      $req->setDeletedVclock($deleted_vclock);
+    }
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_REQ));
     list($messageCode, $response) = $this->_receiveMessage();
     if ($messageCode == self::MSG_CODE_GET_RESP) {
@@ -483,16 +498,33 @@ class Riak_Transport_Pb extends Riak_Transport
     }    
   }
 
-  public function delete(Riak_Object $obj, $dw = null)
+  public function delete(Riak_Object $obj, $rw = null, $r = null, $w = null, $pr = null, $pw = null, $dw = null)
   {
     $req = new $this->_classMap[self::MSG_CODE_DEL_REQ]();
     $req->setBucket($obj->getBucket()->getName());
     $req->setKey($obj->getKey()); 
-    if ($dw) {
-      $req->setDW($dw);
-    }
     if ($obj->getVClock()) {
       $req->setVclock($obj->getVClock());
+    }
+    if ($rw) {
+      $req->setRw(self::translateQuorumNames($rw));
+    }
+    if ($r) {
+      $req->setR(self::translateQuorumNames($r));
+    }
+
+    if ($dw) {
+      $req->setDW(self::translateQuorumNAmes($dw));
+    }
+
+    if (($pr || $pw) && !$this->hasQuorumControls()) {
+      throw new Riak_Transport_Exception("Quorum controls not supported on this server verison: " . $this->getServerVersion());
+    }
+    if ($pr) {
+      $this->setPr(self::translateQuorumNames($pr));
+    }
+    if ($pw) {
+      $this->setPw(self::translateQuorumNames($pw));
     }
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_DEL_REQ));
     list($messageCode, $response) = $this->_receiveMessage();

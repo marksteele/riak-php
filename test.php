@@ -116,3 +116,13 @@ $search = new Riak_Search($client1);
 var_dump($search->search("name:Steele", 'searchtest'));
 
 var_dump($search->search2i('searchtest', 'alias_bin', 0, 'offspring'));
+
+var_dump($client1->getServerVersion());
+
+var_dump($client1->getTransport()->hasPhaselessMapred());
+var_dump($client1->getTransport()->hasPbIndexes());
+var_dump($client1->getTransport()->hasPbSearch());
+var_dump($client1->getTransport()->hasPbConditionals());
+var_dump($client1->getTransport()->hasQuorumControls());
+var_dump($client1->getTransport()->hasTombstoneVclocks());
+var_dump($client1->getTransport()->hasPbHead());
