@@ -13,4 +13,7 @@ interface Riak_Transport_Interface
   public function listKeys(Riak_Bucket $bucket);
   public function getNextKeyListStack();
   public function search($query, $index, $rows = null, $start = null, $sort = null, $filter = null, $df = null, $op = null, $fl = array(), $presort = null);
+  public function search2i($bucket, $index, $queryType = 0, $key = null, $rangeMin = null, $rangeMax = null);
+  public function mapReduce($request, $contentType);
+  public function getNextMapReduceStack();
 }

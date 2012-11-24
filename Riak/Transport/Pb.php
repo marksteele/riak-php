@@ -118,6 +118,7 @@ class Riak_Transport_Pb extends Riak_Transport
 
   protected function _getConnection($force = null)
   {
+    // NOTE TO SELF: Re-write this to be able to disable NAGLE (TCP_NODELAY)
     if ($force || !is_resource($this->_socket)) {
       $errno = null;
       $errstr = null;
@@ -194,6 +195,8 @@ class Riak_Transport_Pb extends Riak_Transport
       case self::MSG_CODE_LIST_KEYS_RESP:
       case self::MSG_CODE_MAPRED_RESP:
       case self::MSG_CODE_PUT_RESP:
+      case self::MSG_CODE_SEARCH_QUERY_RESP:
+      case self::MSG_CODE_INDEX_RESP:
         $obj = Protobuf::decode($this->_classMap[$messageCode], substr($message, 1));
         break;
       default:
@@ -350,6 +353,13 @@ class Riak_Transport_Pb extends Riak_Transport
         $l->setTag($link->getTag());
       }
       $content->addLinks($l);
+    }
+
+    foreach ($obj->getIndices() as $field => $value) {
+      $i = new RpbPair();
+      $i->setKey($field);
+      $i->setValue($value);
+      $content->addIndexes($i);
     }
     
     $req->setContent($content);
@@ -569,12 +579,82 @@ class Riak_Transport_Pb extends Riak_Transport
       }
       if ($response->hasDocs()) {
         foreach ($response->getDocsList() as $doc) {
+          $data = array();
           foreach ($doc->getFieldsList() as $pair) {
-            $results['docs'][$pair->getKey()] = $pair->getValue();
+            $data[$pair->getKey()] = $pair->getValue();
           }
+          $results['docs'][] = $data;
         }
       }
       return $results;
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
+    }
+  }
+
+  public function search2i($bucket, $index, $queryType = 0, $key = null, $rangeMin = null, $rangeMax = null) 
+  {
+    $req = new $this->_classMap[self::MSG_CODE_INDEX_REQ]();
+    $req->setBucket($bucket);
+    $req->setIndex($index);
+    $req->setQtype($queryType);
+    if ($key) {
+      $req->setKey($key);
+    }
+    if ($rangeMin) {
+      $req->setRangeMin($rangeMin);
+    }
+    if ($rangeMax) {
+      $req->setRangeMax($rangeMax);
+    }
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_INDEX_REQ));
+    list($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_INDEX_RESP) {
+      if ($response->hasKeys()) {
+        return $response->getKeysList();
+      } else {
+        return array();
+      }
+    } else {
+      if ($messageCode == self::MSG_CODE_ERROR_RESP) {
+        if ($response->hasErrmsg()) {
+          throw new Riak_Transport_Exception("Protocol buffer error: " . $response->getErrmsg());
+        }
+      }
+      throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
+    }
+  }
+
+  public function mapReduce($request,$contentType)
+  {
+    $req = new $this->_classMap[self::MSG_CODE_MAPRED_REQ]();
+    $req->setRequest($request);
+    $req->setContentType($contentType);
+    $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_MAPRED_REQ));
+    return new Riak_Transport_MapReduce($this);
+  }
+
+  public function getNextMapReduceStack()
+  {
+    $lastStack = false;
+    list($messageCode, $response) = $this->_receiveMessage();
+    if ($messageCode == self::MSG_CODE_MAPRED_RESP) {
+      if ($response->hasDone() && $response->getDone()) {
+        $lastStack = true; // This signals our iterator to stop.
+      }
+      $ret = array();
+      if ($response->hasPhase()) {
+        $ret['phase'] = $response->getPhase();
+      }
+      if ($response->hasResponse()) {
+        $ret['response'] = $response->getResponse();
+      }
+      return array($lastStack, $ret);
     } else {
       if ($messageCode == self::MSG_CODE_ERROR_RESP) {
         if ($response->hasErrmsg()) {

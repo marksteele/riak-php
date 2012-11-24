@@ -12,4 +12,9 @@ class Riak_Search
   {
     return $this->_client->getTransport()->search($query,$index,$rows,$start,$sort,$filter,$df,$op,$fl,$presort);
   }
+  public function search2i($bucket, $index, $queryType = 0, $key = null, $rangeMin = null, $rangeMax = null)
+  {
+    return $this->_client->getTransport()->search2i($bucket, $index, $queryType, $key, $rangeMin, $rangeMax);
+  }
+
 }

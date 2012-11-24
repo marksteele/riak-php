@@ -20,6 +20,7 @@ require_once('Riak/Link.php');
 require_once('Riak/Search.php');
 require_once('Riak/Transport/Interface.php');
 require_once('Riak/Transport/KeyList.php');
+require_once('Riak/Transport/MapReduce.php');
 require_once('Riak/Transport.php');
 require_once('Riak/Transport/Pb.php');
 require_once('Riak/Transport/Exception.php');
@@ -70,3 +71,48 @@ foreach ($client1->getBucket('argle')->get('link1')->getLinks() as $link) {
   echo $link->getKey() . "\n";
   echo $link->getTag() . "\n";
 }
+
+//Mapred
+$client1->getBucket('Mapredtest')->newObject('mapredkey1')->setValue(10)->store();
+$client1->getBucket('Mapredtest')->newObject('mapredkey2')->setValue(10)->store();
+$client1->getBucket('Mapredtest')->newObject('mapredkey3')->setValue(10)->store();
+$client1->getBucket('Mapredtest')->newObject('mapredkey4')->setValue(10)->store();
+$client1->getBucket('Mapredtest')->newObject('mapredkey5')->setValue(10)->store();
+
+foreach ($client1->MapReduce(
+  '
+    {
+      "inputs": "Mapredtest", 
+      "query": [
+        {
+          "map": {
+            "arg": null,
+            "name": "Riak.mapValuesJson",
+            "language": "javascript",
+            "keep": false
+          }
+        },
+        {
+          "reduce": {
+            "arg": null,
+            "name": "Riak.reduceSum",
+            "language": "javascript",
+            "keep": true
+          }
+        }
+      ]
+    }','application/json') as $res) {
+  echo "Phase: " . $res['phase'] . ' Response: ' . $res['response'] . "\n";
+}
+
+echo exec('/usr/sbin/search-cmd install searchtest') . "\n";
+
+$client1->getBucket('searchtest')->newObject('searchkey1')->setValue('{"name": "Mark Steele", "alias": "parent"}')->setContentType('application/json')->addSecondaryIndex("alias_bin","parent")->store();
+$client1->getBucket('searchtest')->newObject('searchkey2')->setValue('{"name": "Wyle E. Coyote", "alias": "splat"}')->setContentType('application/json')->store();
+$client1->getBucket('searchtest')->newObject('searchkey3')->setValue('{"name": "Kimberly Steele", "alias": "offspring"}')->setContentType('application/json')->addSecondaryIndex("alias_bin","offspring")->store();
+$client1->getBucket('searchtest')->newObject('searchkey4')->setValue('{"name": "Michael Steele", "alias": "offspring"}')->setContentType('application/json')->addSecondaryIndex("alias_bin","offspring")->store();
+
+$search = new Riak_Search($client1);
+var_dump($search->search("name:Steele", 'searchtest'));
+
+var_dump($search->search2i('searchtest', 'alias_bin', 0, 'offspring'));

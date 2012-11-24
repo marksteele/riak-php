@@ -120,4 +120,9 @@ class Riak_Client
     return $this->getTransport()->listKeys($bucket);
   }
 
+  public function mapReduce($request, $contentType) 
+  {
+    return $this->getTransport()->mapReduce($request, $contentType);
+  }
+  
 }

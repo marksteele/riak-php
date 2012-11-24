@@ -16,6 +16,7 @@ class Riak_Object
   private $_vtag;
   private $_key;
   private $_links = array();
+  private $_indices = array();
 
   public function __construct(Riak_Client $client, Riak_Bucket $bucket, $key=NULL) 
   {
@@ -40,6 +41,7 @@ class Riak_Object
     $this->_charset = null;
     $this->_vtag = null;
     $this->_links = array();
+    $this->_indices = array();
   }
 
   public function getBucket() 
@@ -271,4 +273,17 @@ class Riak_Object
   {
     return $this->_links;
   }
+
+
+  public function addSecondaryIndex($field, $value)
+  {
+    $this->_indices[$field] = $value;
+    return $this;
+  }
+
+  public function getIndices()
+  {
+    return $this->_indices;
+  }
+
 }
