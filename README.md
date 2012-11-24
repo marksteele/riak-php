@@ -22,7 +22,7 @@ TODO
  - Docblocks everywhere
  - Unit tests. Not super motivated to write these, volunteers needed ... Looking at you basho ....
  - Making the Riak_Client capability aware to make it easier to implement HTTP API properly. Not super motivated to actually go ahead and implement HTTP API.
- - Benchmark against Basho implementation. My guess would be that this one is faster (binary protocol, re-uses conneciton)
+ - Benchmark against Basho implementation. My guess would be that this one is faster (binary protocol, re-uses connection)
 
 NOTES
  - If using a streaming method (key list, map reduce) you cannot interleave other requests to Riak. If you need to do this, open a new connection.
