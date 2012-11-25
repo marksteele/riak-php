@@ -4,6 +4,7 @@ class Riak_Client
 {
   private $_transport;
   private $_r;
+  private $_rw;
   private $_w;
   private $_dw;
   private $_pw;
@@ -31,6 +32,17 @@ class Riak_Client
   public function setR($r) 
   { 
     $this->_r = $r; 
+    return $this; 
+  }
+
+  public function getRW() 
+  { 
+    return $this->_rw; 
+  }
+
+  public function setRW($rw) 
+  { 
+    $this->_rw = $rw; 
     return $this; 
   }
 

@@ -20,6 +20,7 @@ class Riak_Bucket {
   private $_client;
   private $_name;
   private $_r;
+  private $_rw;
   private $_w;
   private $_dw;
   private $_pw;
@@ -60,6 +61,17 @@ class Riak_Bucket {
   public function setW($w)   
   { 
     $this->_w = $w; 
+    return $this;
+  }
+
+  public function getRW()
+  { 
+    return isset($this->_rw) ? $this->_rw : $this->getClient()->getRW();
+  }
+
+  public function setRW($rw)   
+  { 
+    $this->_rw = $rw; 
     return $this;
   }
 

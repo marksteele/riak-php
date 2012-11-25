@@ -512,6 +512,9 @@ class Riak_Transport_Pb extends Riak_Transport
     if ($r) {
       $req->setR(self::translateQuorumNames($r));
     }
+    if ($w) {
+      $req->setW(self::translateQuorumNames($w));
+    }
 
     if ($dw) {
       $req->setDW(self::translateQuorumNAmes($dw));

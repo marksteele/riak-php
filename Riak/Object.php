@@ -230,9 +230,20 @@ class Riak_Object
     $this->_siblings[] = $sibling;
   }
 
-  public function delete($dw=NULL)
+  public function delete(Riak_Object $obj, $rw = null, $r = null, $w = null, $pr = null, $pw = null, $dw = null)
   {
-    if ($this->getBucket()->getClient()->delete($this, $dw ? $dw : $this->getBucket()->getDW()) == true) {
+    if ($this
+          ->getBucket()
+          ->getClient()
+          ->delete(
+            $this, 
+            $rw ? $rw : $this->getBucket()->getRW(),
+            $r ? $r : $this->getBucket()->getR(),
+            $w ? $w : $this->getBucket()->getW(),
+            $pr ? $pr : $this->getBucket()->getPR(),
+            $pw ? $pw : $this->getBucket()->getPW(),
+            $dw ? $dw : $this->getBucket()->getDW()
+    ) == true) {
       $this->clear();
       return true;
     }
