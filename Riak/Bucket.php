@@ -138,7 +138,7 @@ class Riak_Bucket {
     return isset($this->_dw) ? $this->_dw : $this->getClient()->getDW();
   }
   /**
-   * Get number of primary vnodes must write to in order to consider an operation successful
+   * Get number of primary replicas must write to in order to consider an operation successful
    * 
    * @return mixed Integer or text version of quorum value
    */
@@ -147,7 +147,7 @@ class Riak_Bucket {
     return isset($this->_pw) ? $this->_pw : $this->getClient()->getPW();
   }
   /**
-   * Get number of primary vnodes must read from before considering it a success
+   * Get number of primary replicas must read from before considering it a success
    * 
    * @return mixed Integer or text version of quorum value
    */
@@ -169,7 +169,7 @@ class Riak_Bucket {
   /**
    * Set number of primary vnodes must acknowledge write operation before considering it a success
    * 
-   * @param mixed $pw Integer or text version of quorum value
+   * @param mixed $pw Integer or text version of quorum value for primary replica writes
    * @return Riak_Bucket
    */
   public function setPW($pw) 
@@ -178,7 +178,7 @@ class Riak_Bucket {
     return $this;
   }
   /**
-   * Set number of primary vnodes must read from before considering it a success
+   * Set number of primary replicas must read from before considering it a success
    * 
    * @param mixed $pr Integer or text version of quorum value
    * @return Riak_Bucket
@@ -246,11 +246,11 @@ class Riak_Bucket {
         $obj, 
         $r ? $r : $this->getR(), 
         $pr ? $pr : $this->getPR(), 
-        $basic_quorum, 
-        $notfound_ok, 
-        $if_modified, 
+        $basicQuorum, 
+        $notfoundOk, 
+        $ifModified, 
         $head, 
-        $deleted_vclock
+        $deletedVclock
     );
   }
   /**
