@@ -66,7 +66,12 @@ class Riak_Transport_Pb extends Riak_Transport
     self::MSG_CODE_SEARCH_QUERY_RESP => 'RpbSearchQueryResp',
   );
 
-  private $_quorumNames = array('default' => 4294967291,'all' => 4294967292,'quorum' => 4294967293,'one' => 4294967294);
+  private $_quorumNames = array(
+    'default' => 4294967291,
+    'all' => 4294967292,
+    'quorum' => 4294967293,
+    'one' => 4294967294
+  );
 
   private $_socket;
   private $_port;
@@ -444,8 +449,7 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     $obj->setValue($content->getValue());
   }
-
-  public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basic_quorum = false, $notfound_ok = false, $if_modified = null, $head = false, $deleted_vclock = false)
+  public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basicQuorum = false, $notfoundOk = false, $ifModified = null, $head = false, $deletedVclock = false)
   {
     $req = new $this->_classMap[self::MSG_CODE_GET_REQ]();
     $req->setBucket($obj->getBucket()->getName());
@@ -457,14 +461,14 @@ class Riak_Transport_Pb extends Riak_Transport
       $req->setPr(self::translateQuorumNames($pr));
     }
     $req->setHead($head);
-    $req->setBasicQuorum($basic_quorum);
-    $req->setNotfoundOk($notfound_ok);
-    if ($if_modified) {
-      $req->setIfModified($if_modified);
+    $req->setBasicQuorum($basicQuorum);
+    $req->setNotfoundOk($notfoundOk);
+    if ($ifModified) {
+      $req->setIfModified($ifModified);
     }
     $req->setHead($head);
     if ($this->hasTombstoneVclocks()) {
-      $req->setDeletedVclock($deleted_vclock);
+      $req->setDeletedVclock($deletedVclock);
     }
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_GET_REQ));
     list($messageCode, $response) = $this->_receiveMessage();
