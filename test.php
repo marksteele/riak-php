@@ -19,8 +19,7 @@ require_once('Riak/Object.php');
 require_once('Riak/Link.php');
 require_once('Riak/Search.php');
 require_once('Riak/Transport/Interface.php');
-require_once('Riak/Transport/KeyList.php');
-require_once('Riak/Transport/MapReduce.php');
+require_once('Riak/Transport/Iterator.php');
 require_once('Riak/Transport.php');
 require_once('Riak/Transport/Pb.php');
 require_once('Riak/Transport/Exception.php');
@@ -102,9 +101,8 @@ foreach ($client1->MapReduce(
         }
       ]
     }','application/json') as $res) {
-  echo "Phase: " . $res['phase'] . ' Response: ' . $res['response'] . "\n";
+  var_dump($res);
 }
-
 echo exec('/usr/sbin/search-cmd install searchtest') . "\n";
 
 $client1->getBucket('searchtest')->newObject('searchkey1')->setValue('{"name": "Mark Steele", "alias": "parent"}')->setContentType('application/json')->addSecondaryIndex("alias_bin","parent")->store();

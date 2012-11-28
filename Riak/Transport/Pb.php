@@ -1,11 +1,44 @@
 <?php
+/*
+   This file is provided to you under the Apache License,
+   Version 2.0 (the "License"); you may not use this file
+   except in compliance with the License.  You may obtain
+   a copy of the License at
 
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+*/
 require_once('/usr/share/pear/DrSlump/Protobuf.php');
 use \DrSlump\Protobuf;
 Protobuf::autoload();
 
+/*
+  This implementation is based on the API developed by Basho's Rusty Klophaus (@rklophaus) (rusty@basho.com) and others.
+  See here for more information: https://github.com/basho/riak-php-client
+*/
+
+/**
+ * Riak protocol buffer transport
+ *
+ * Protocol buffer Riak transport implementation
+ *
+ * @author Mark Steele <mark@control-alt-del.org>
+ * @version 1.0
+ * @package Riak_Transport_Pb
+ * @copyright 2012 Mark Steele
+ */
 class Riak_Transport_Pb extends Riak_Transport
 {
+  /**#@+
+   * Class constants
+   * @var int
+   */
   const MSG_CODE_ERROR_RESP           =  0;
   const MSG_CODE_PING_REQ             =  1; // 0 length response
   const MSG_CODE_PING_RESP            =  2; // 0 length response
@@ -35,7 +68,12 @@ class Riak_Transport_Pb extends Riak_Transport
   const MSG_CODE_INDEX_RESP           = 26;
   const MSG_CODE_SEARCH_QUERY_REQ     = 27;
   const MSG_CODE_SEARCH_QUERY_RESP    = 28;
-
+  /**#@-*/
+  /**
+   * Mapping of message code to PB class names
+   * @access private
+   * @var array
+   */
   private $_classMap = array(
     self::MSG_CODE_ERROR_RESP => 'RpbErrorResp',
     self::MSG_CODE_GET_CLIENT_ID_REQ => 'RpbGetClientIdReq',
@@ -66,6 +104,11 @@ class Riak_Transport_Pb extends Riak_Transport
     self::MSG_CODE_SEARCH_QUERY_RESP => 'RpbSearchQueryResp',
   );
 
+  /**
+   * Mapping of quorum text values to integers, used for convenience
+   * @access private
+   * @var array
+   */
   private $_quorumNames = array(
     'default' => 4294967291,
     'all' => 4294967292,
@@ -73,22 +116,51 @@ class Riak_Transport_Pb extends Riak_Transport
     'one' => 4294967294
   );
 
+  /**
+   * Socket used for communications
+   * @var resource
+   * @access private
+   */
   private $_socket;
+  /**
+   * Port to connect to
+   * @access private
+   * @var int
+   */
   private $_port;
+  /**
+   * Host to connect to
+   * @access private
+   * @var string
+   */
   private $_host;
-
+  /**
+   * Class constructor
+   *
+   * @param string $host The host to connect to
+   * @param int $port The tcp port
+   */
   public function __construct($host='127.0.0.1', $port=8087) 
   {
     $this->_port = $port;
     $this->_host = $host;
-    return $this;
   }
-
+  /**
+   * Translate a quorum name to it's integer value
+   *
+   * @param string $item
+   * @return mixed The value if it's found in the map, otherwise returns input
   public static function translateQuorum($item)
   {
     return isset($this->_quorumNames[$item]) ? $this->_quorumNames[$item] : $item;
   }
- 
+  /**
+   * Set the client identifier, used to ease vector clock handling
+   *
+   * @param string The client id
+   * @return bool True on success
+   * @throws Riak_Transport_Exception
+   */ 
   public function setClientId($clientId)
   {
     $req = new $this->_classMap[self::MSG_CODE_SET_CLIENT_ID_REQ]();
@@ -106,7 +178,12 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }   
   }
-
+  /**
+   * Returns the server version number
+   *
+   * @return string Server version string
+   * @throws Riak_Transport_Exception
+   */ 
   public function getServerVersion()
   {
     if (!$this->_serverVersion) {
@@ -125,7 +202,13 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     return $this->_serverVersion;
   }
-
+  /**
+   * Establish connection to server
+   *
+   * @param bool $force Force a new connection
+   * @return resource Socket connection to server
+   * @throws Riak_Transport_Exception
+   */
   protected function _getConnection($force = null)
   {
     // NOTE TO SELF: Re-write this to be able to disable NAGLE (TCP_NODELAY)
@@ -140,7 +223,12 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     return $this->_socket;
   }
-
+  /**
+   * Handle writing data payload over socket
+   *
+   * @param string $payload The data to send
+   * @throws Riak_Transport_Exception
+   */
   protected function _sendData($payload)
   {
     for ($written = 0; $written < strlen($payload); $written += $fwrite) {
@@ -151,13 +239,22 @@ class Riak_Transport_Pb extends Riak_Transport
       }
     }
   }
-
+  /**
+   * Send a message code on the wire
+   * @param int The message code to send
+   * @return void
+   */
   protected function _sendCode($msgCode)
   {
     $packed = pack("NC", 1, $msgCode);
     $this->_sendData($packed);
   }
-
+  /**
+   * Receive packets on the wire, snarfle in a full message
+   *
+   * @return string A string containing the PB encoded message
+   * @throws Riak_Transport_Exception
+   */
   protected function _receivePacket()
   {
     $message = '';
@@ -184,7 +281,12 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     return $message; // First character is message code...
   }
-
+  /**
+   * Read and decode a message
+   * 
+   * @throws Riak_Transport_Exception
+   * @return array An array containing the message code and the PB decoded object
+   */
   protected function _receiveMessage()
   {
     $message = $this->_receivePacket();
@@ -214,13 +316,24 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     return array($messageCode, $obj);
   }
-
+  /**
+   * Encode a message for transport
+   * 
+   * @param mixed A PB object
+   * @param int A PB message code
+   * @return string A binary string payload that's ready for transmission over the wire
+   */
   protected function _encodeMessage($obj, $messageCode)
   {
     $message = Protobuf::encode($obj);
     return pack("NC", 1 + strlen($message), $messageCode) . $message;
   }
-
+  /**
+   * Check to see if the connection is working
+   *
+   * @return bool True on success
+   * @throws Riak_Transport_Exception
+   */
   public function ping()
   {
     $this->_sendCode(self::MSG_CODE_PING_REQ);
@@ -236,7 +349,12 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }
   }
-
+  /**
+   * Retrieve the list of buckets. Use with caution...
+   *
+   * @return array The list of buckets.
+   * @throws Riak_Transport_Exception
+   */
   public function listBuckets()
   {
     $this->_sendCode(self::MSG_CODE_LIST_BUCKETS_REQ);
@@ -256,7 +374,14 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);    
     }
   }
-
+  /**
+   * Set properties for a bucket
+   *
+   * @param string $name Bucket name
+   * @param array $props Array of properties
+   * @return bool True on success
+   * @throws Riak_Transport_Exception
+   */
   public function setBucketProperties($name, array $props)
   {
     $properties = new RpbBucketProps();
@@ -282,7 +407,13 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }
   }
-
+  /**
+   * Get bucket properties
+   *
+   * @param string $name Bucket name
+   * @return array An array of bucket properties
+   * @throws Riak_Transport_Exception
+   */
   public function getBucketProperties($name)
   {
     $req = new $this->_classMap[self::MSG_CODE_GET_BUCKET_REQ]();
@@ -310,7 +441,20 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }
   }
-
+  /**
+   * Store an object in Riak
+   *
+   * @param Riak_Object $obj The Riak object to store
+   * @param int|string $w The number of replicas to write to before returning success
+   * @param int|string $dw The number of primary replicas to commit to durable storage before returning success
+   * @param int|string $pw The number of primary replicas which must be up to attempt to store the value
+   * @param bool $returnBody Retrieve the object that has just been stored on success (will populate siblings)
+   * @param bool $returnHead Retrieve metadata after successful operation
+   * @param bool $ifNotModified Only perform store operation if vclock passed matches the one stored in the data store
+   * @param bool $ifNoneMatch Only perform the store operation if an object with this key/bucket does not exist.
+   * @return Riak_Object|bool Boolean false to handle ifnonematch/ifnotmodified, otherwise a Riak object returned (possibly updated).
+   * @throws Riak_Transport_Exception
+   */
   public function store(Riak_Object &$obj, $w = null, $dw = null, $pw = null, $returnBody = false, $returnHead = false, $ifNotModified = false, $ifNoneMatch = false)
   {
     $req = new $this->_classMap[self::MSG_CODE_PUT_REQ]();
@@ -411,7 +555,13 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }
   }
-
+  /**
+   * Populate a Riak_Object object with data from a RpbContent PB class
+   *
+   * @param Riak_Object $obj The riak object to update
+   * @param RpbContent $content the PB class object
+   * @return void
+   */
   private function _populate(Riak_Object &$obj, RpbContent $content) 
   {
     $obj->clear();
@@ -449,6 +599,21 @@ class Riak_Transport_Pb extends Riak_Transport
     }
     $obj->setValue($content->getValue());
   }
+  /**
+   * Retrieve an object in Riak
+   *
+   * @param Riak_Object $obj The Riak object to retrieve
+   * @param int|string $r The number of replicas to read from before returning success
+   * @param int|string $pr The number of primary replicas which must be up to attempt to read the value
+   * @param bool $basicQuorum  whether to return early in some failure cases (eg. when r=1 and you get 2 errors and a success basic_quorum=true would return an error)
+   * @param bool $notfoundOk whether to treat notfounds as successful reads for the purposes of R
+   * @param string $ifModified  when a vclock is supplied as this option only return the object if the vclocks don't match
+   * @param bool $ifNoneMatch Only perform the store operation if an object with this key/bucket does not exist.
+   * @param bool $head return the object with the value(s) set as empty - allows you to get the metadata without a potentially large value
+   * @param bool $deletedVclock return the tombstone's vclock, if applicable
+   * @return Riak_Object|bool Boolean false to handle ifmodified, otherwise a Riak object returned (possibly updated).
+   * @throws Riak_Transport_Exception
+   */
   public function fetch(Riak_Object &$obj, $r = null, $pr = null, $basicQuorum = false, $notfoundOk = false, $ifModified = null, $head = false, $deletedVclock = false)
   {
     $req = new $this->_classMap[self::MSG_CODE_GET_REQ]();
@@ -501,7 +666,19 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }    
   }
-
+  /**
+   * Delete an object in Riak
+   *
+   * @param Riak_Object $obj The Riak object to store
+   * @param int|string $r The number of replicas to read from before returning success
+   * @param int|string $rw how many replicas to delete before returning a successful response
+   * @param int|string $pr The number of primary replicas which must be up to attempt to retrieve the value
+   * @param int|string $w The number of replicas to write to before returning success
+   * @param int|string $dw The number of primary replicas to commit to durable storage before returning success
+   * @param int|string $pw The number of primary replicas which must be up to attempt to delete the value
+   * @return bool True on success
+   * @throws Riak_Transport_Exception
+   */
   public function delete(Riak_Object $obj, $rw = null, $r = null, $w = null, $pr = null, $pw = null, $dw = null)
   {
     $req = new $this->_classMap[self::MSG_CODE_DEL_REQ]();
@@ -546,15 +723,25 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer response code: " . $messageCode);
     }    
   }
-
+  /**
+   * Retrieve a list of keys
+   *
+   * @param Riak_Bucket $bucket Bucket object
+   * @return Riak_Transport_Iterator The key listing iterator
+   */
   public function listKeys(Riak_Bucket $bucket)
   {
     $req = new $this->_classMap[self::MSG_CODE_LIST_KEYS_REQ]();
     $req->setBucket($bucket->getName());
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_LIST_KEYS_REQ));
-    return new Riak_Transport_KeyList($this);
+    return new Riak_Transport_Iterator($this,'getNextKeyListStack');
   }
-
+  /**
+   * Fetch a stack of keys from the sever
+   *
+   * @return array An array consisting of a flag to indicate the end of results, and an array of results.
+   * @throws Riak_Transport_Exception
+   */
   public function getNextKeyListStack()
   {
     $lastStack = false;
@@ -574,7 +761,22 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
     }
   }
-
+  /**
+   * Perform a search
+   *
+   * @param string $query The query to send
+   * @param string $index The index to search
+   * @param int $rows the number of rows to fetch
+   * @param int $start the starting offset
+   * @param string $sort sorting field
+   * @param string $filter filters search with additional query scoped to inline fields
+   * @param string $df override the default_field setting in the schema file
+   * @param string $op 'and' or 'or', to override the default_op operation setting in the schema file
+   * @param array $fl return the fields limit
+   * @param string $presort presort (key/score)
+   * @return array An array of search results
+   * @throws Riak_Transport_Exception
+   */
   public function search($query, $index, $rows = null, $start = null, $sort = null, $filter = null, $df = null, $op = null, $fl = array(), $presort = null)
   {
     $req = new $this->_classMap[self::MSG_CODE_SEARCH_QUERY_REQ]();
@@ -635,7 +837,17 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
     }
   }
-
+  /**
+   * Perform a 2i search
+   *
+   * @param string $bucket The bucket name
+   * @param string $index The index to search
+   * @param int $queryType the query type: 0 (eq) or 1 (range)
+   * @param string $key The key to search for (for 'eq' searches)
+   * @param int $rangeMin The starting range, for range queries
+   * @param int $rangeMax The ending range, for range queries
+   * @return array an array of search results
+   */
   public function search2i($bucket, $index, $queryType = 0, $key = null, $rangeMin = null, $rangeMax = null) 
   {
     $req = new $this->_classMap[self::MSG_CODE_INDEX_REQ]();
@@ -668,16 +880,28 @@ class Riak_Transport_Pb extends Riak_Transport
       throw new Riak_Transport_Exception("Unexpected protocol buffer message code: " . $messageCode);
     }
   }
-
+  /**
+   * Send a mapreduce job
+   *
+   * @param string $request The mapreduce request
+   * @param string $contentType The content type ('application/json', 'application/erlang')
+   * @return Riak_Transport_Iterator The map reduce iterator
+   * @throws Riak_Transport_Exception
+   */
   public function mapReduce($request,$contentType)
   {
     $req = new $this->_classMap[self::MSG_CODE_MAPRED_REQ]();
     $req->setRequest($request);
     $req->setContentType($contentType);
     $this->_sendData($this->_encodeMessage($req, self::MSG_CODE_MAPRED_REQ));
-    return new Riak_Transport_MapReduce($this);
+    return new Riak_Transport_Iterator($this,'getNextMapReduceStack');
   }
-
+  /**
+   * Grab a stack of map reduce results
+   *
+   * @return array An array consisting of the flag to indicate end of results, and an array of results.
+   * @throws Riak_Transport_Exception
+   */
   public function getNextMapReduceStack()
   {
     $lastStack = false;

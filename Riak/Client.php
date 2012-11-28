@@ -264,7 +264,7 @@ class Riak_Client
   /**
    * Retrieve an object in Riak
    *
-   * @param Riak_Object $obj The Riak object to store
+   * @param Riak_Object $obj The Riak object to retrieve
    * @param int|string $r The number of replicas to read from before returning success
    * @param int|string $pr The number of primary replicas which must be up to attempt to read the value
    * @param bool $basicQuorum  whether to return early in some failure cases (eg. when r=1 and you get 2 errors and a success basic_quorum=true would return an error) 
@@ -280,7 +280,7 @@ class Riak_Client
     return $this->getTransport()->fetch($obj, $r, $pr, $basicQuorum, $notfoundOk, $ifModified, $head, $deletedVclock); 
   }
   /**
-   * Retrieve an object in Riak
+   * Delete an object in Riak
    *
    * @param Riak_Object $obj The Riak object to store
    * @param int|string $r The number of replicas to read from before returning success
@@ -298,8 +298,8 @@ class Riak_Client
   /**
    * Retrieve a list of keys
    *
-   * @param string $bucket Bucket name
-   * @return Iterator The key listing iterator
+   * @param Riak_Bucket $bucket Bucket object
+   * @return Riak_Transport_Iterator The key listing iterator
    */
   public function listKeys(Riak_Bucket $bucket)
   {
@@ -310,7 +310,7 @@ class Riak_Client
    *
    * @param string $request The mapreduce request
    * @param string $contentType The content type ('application/json', 'application/erlang')
-   * @return Iterator The map reduce iterator
+   * @return Riak_Transport_Iterator The map reduce iterator
    */
   public function mapReduce($request, $contentType) 
   {
