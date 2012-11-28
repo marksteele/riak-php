@@ -370,7 +370,7 @@ class Riak_Object
    */  
   public function setMeta($metaName, $value) 
   {
-    $this->meta[strtolower($metaName)] = $value;
+    $this->_meta[strtolower($metaName)] = $value;
     return $this;
   }
   /**
@@ -381,7 +381,7 @@ class Riak_Object
    */
   public function removeMeta($metaName) 
   {
-    unset ($this->meta[strtolower($metaName)]);
+    unset ($this->_meta[strtolower($metaName)]);
     return $this;
   }
   /**
@@ -400,7 +400,7 @@ class Riak_Object
    */  
   public function removeAllMeta() 
   {
-    $this->meta = array();
+    $this->_meta = array();
     return $this;
   }
 
