@@ -112,7 +112,7 @@ class Riak_Object
    *
    * @param Riak_Client $client the Riak client object
    * @param Riak_Bucket $bucket the Riak bucket object
-   * @aram string $key The optional key to use for storing this object. If none supplied server will generate.	
+   * @param string $key The optional key to use for storing this object. If none supplied server will generate.	
    */
   public function __construct(Riak_Client $client, Riak_Bucket $bucket, $key=NULL) 
   {
@@ -160,6 +160,16 @@ class Riak_Object
   public function getKey()  
   {
     return $this->_key;
+  }
+  /**
+   * Set key
+   * @param string $key key
+   * @return Riak_Object
+   */
+  public function setKey($key)  
+  {
+    $this->_key = $key;
+    return $this;
   }
   /**
    * Return the object's value

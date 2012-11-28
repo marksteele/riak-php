@@ -124,3 +124,11 @@ var_dump($client1->getTransport()->hasPbConditionals());
 var_dump($client1->getTransport()->hasQuorumControls());
 var_dump($client1->getTransport()->hasTombstoneVclocks());
 var_dump($client1->getTransport()->hasPbHead());
+
+
+$bucket = $client1->getBucket('bench-mark');
+$start = microtime(true);
+foreach (range(1,10000) as $i) {
+  $bucket->newObject()->setValue('asdfasdfasdfasdf')->store();
+}
+printf("10k inserts: %.02f",microtime(true)-$start);
